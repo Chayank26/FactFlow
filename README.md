@@ -9,10 +9,10 @@ Requirements: Node.js 22.12+ (tested with 24.18), Python 3.13 (tested with 3.13.
 ### Backend — terminal 1
 
 ```sh
-cd /Users/chayankbhargava/Projects/SuperJoin/backend
+cd /Users/chayankbhargava/Projects/FactFlow/backend
 python3.13 -m venv .venv
 .venv/bin/python -m pip install -r requirements.lock.txt
-.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8018 --reload
+.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8019 --reload
 ```
 
 On this machine Python 3.13 is at `/opt/anaconda3/bin/python3.13`; use that full path if `python3.13` is not on PATH. The existing `.venv` is already installed, so you can skip the first two setup commands when returning to this workspace.
@@ -20,12 +20,12 @@ On this machine Python 3.13 is at `/opt/anaconda3/bin/python3.13`; use that full
 ### Frontend — terminal 2
 
 ```sh
-cd /Users/chayankbhargava/Projects/SuperJoin/frontend
+cd /Users/chayankbhargava/Projects/FactFlow/frontend
 npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5178. API health: http://127.0.0.1:8018/health. Interactive API docs: http://127.0.0.1:8018/docs. Stop each server with Ctrl+C in its terminal.
+Open http://127.0.0.1:5179. API health: http://127.0.0.1:8019/health. Interactive API docs: http://127.0.0.1:8019/docs. Stop each server with Ctrl+C in its terminal.
 
 The dedicated ports avoid another project running on 5173. Strict port mode makes a collision explicit. To use another API address, copy frontend/.env.example to frontend/.env.local, change VITE_API_BASE_URL, and restart Vite. This value is public browser configuration, never a secret. If the frontend port changes, update the allowed origins in backend/app/main.py as well.
 
