@@ -1,6 +1,6 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Phase 3 complete.
+Updated after every completed phase. Current milestone: Phase 4 complete.
 
 ## Phase 1 — Project foundation
 Created separate frontend and backend folders, Git ignore rules, and a persistent documentation agreement in AGENTS.md.
@@ -14,3 +14,7 @@ Verification: TypeScript and production build pass; Vite serves on http://127.0.
 ## Phase 3 — Health API
 Created the FastAPI application and typed GET /health response. A minimal endpoint proves the Python server works before introducing browser networking, storage, or PDF parsing.
 Verification: live HTTP request returned 200 with {"status":"ok","service":"fact-layer-api"}. Backend runs on port 8000.
+
+## Phase 4 — Browser/API connection
+Added a health component with loading, success, offline, timeout, and retry behavior. Allowed the two exact local frontend origins in FastAPI. This verifies the network boundary before building feature screens.
+Verification: production build passes; live CORS response allows the frontend origin; headless Chrome renders “Backend connected” after a real API request.

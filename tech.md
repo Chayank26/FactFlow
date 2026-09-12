@@ -1,6 +1,6 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Phase 3 complete.
+Updated after every completed phase. Current milestone: Phase 4 complete.
 
 ## Phase 1 — Project foundation
 **One Git repository with frontend/ and backend/:** one history keeps application changes and learning notes together. Separate repositories would add coordination overhead for this solo practice project. A monorepo orchestrator would add machinery before we have shared packages or complex build dependencies.
@@ -19,3 +19,11 @@ Reference: https://vite.dev/guide/
 **Pydantic:** validates and serializes the health response and will later validate claims. Plain dictionaries are simpler but do not enforce the response contract.
 **Uvicorn:** serves the ASGI application locally; its reload mode aids development. A production process manager is premature here.
 **requirements.lock.txt:** records exact installed versions for repeatable setup; requirements.txt expresses direct dependencies. Regenerate the lock after intentional dependency changes.
+
+## Phase 4 — Fetch, effects, and CORS
+**Browser fetch + AbortController:** enough for one GET with cancellation and timeout. Axios adds a dependency without a current need for interceptors. A query library becomes useful when we have cached document/fact lists; local component state is adequate now.
+**React effect:** ties the connection check to mounting and retry, with cleanup to prevent stale updates. No global state library is needed for one isolated status component.
+**FastAPI CORSMiddleware:** browsers treat ports 5173 and 8000 as different origins. Explicit local origins let the browser read the response. A wildcard is unnecessary; CORS is not authentication. A Vite proxy is an alternative but would hide the cross-origin boundary we want to learn here. GET is the only allowed method for now; extend this deliberately when uploads arrive.
+**VITE_API_BASE_URL:** makes the API location configurable without editing components. Vite embeds this value in public browser code, so it must never contain secrets.
+**Temporary Playwright + installed Chrome:** verifies actual browser fetch/CORS behavior that curl alone cannot prove. Kept outside application dependencies because this is a small smoke check.
+Reference: https://fastapi.tiangolo.com/tutorial/cors/
