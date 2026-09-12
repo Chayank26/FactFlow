@@ -1,6 +1,6 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Phase 4 complete.
+Updated after every completed phase. Current milestone: Part 1 complete (phases 1–5). Current local ports: frontend 5178, API 8018.
 
 ## Phase 1 — Project foundation
 **One Git repository with frontend/ and backend/:** one history keeps application changes and learning notes together. Separate repositories would add coordination overhead for this solo practice project. A monorepo orchestrator would add machinery before we have shared packages or complex build dependencies.
@@ -27,3 +27,18 @@ Reference: https://vite.dev/guide/
 **VITE_API_BASE_URL:** makes the API location configurable without editing components. Vite embeds this value in public browser code, so it must never contain secrets.
 **Temporary Playwright + installed Chrome:** verifies actual browser fetch/CORS behavior that curl alone cannot prove. Kept outside application dependencies because this is a small smoke check.
 Reference: https://fastapi.tiangolo.com/tutorial/cors/
+
+## Phase 5 — Layout and navigation
+**Tailwind CSS via its Vite plugin:** integrates the agreed styling stack and provides a shared baseline plus utilities for later components. This shell mostly uses named CSS classes so a learner can inspect layout rules together in one stylesheet. Plain CSS alone would be enough for this phase; Tailwind is a consistency choice, not a runtime requirement for facts. Bootstrap would provide more preset components but impose a visual style; CSS-in-JS would add component styling machinery we do not need.
+
+**Lucide React:** named SVG icon imports give the navigation and evidence concepts a consistent visual vocabulary. Hand-drawn icons take maintenance time; emoji have inconsistent appearance and semantics across platforms. Icons accompanying text are decorative and the text supplies the label.
+
+**Native hash links + React state:** support direct section URLs, Back/Forward, refresh, and keyboard navigation for three views. React Router becomes worthwhile with nested document detail URLs, route loading, or more complex navigation. A state-only switch would lose URL/history behavior. No Redux or global store is justified at this scale.
+
+**CSS flex/grid and media queries:** adapt the same document structure to desktop and mobile. Separate mobile pages would duplicate state and markup. System fonts avoid external font requests. Decorative document artwork uses CSS and SVG icons; raster image generation is unnecessary for these simple shapes.
+
+**Dedicated ports 5178/8018 and strict frontend port:** avoid a discovered conflict with another project. Silently choosing a new frontend port could break the explicit CORS origins, so a collision should be visible. CORS still allows only the two intended local frontend origins.
+
+**Retained tools:** React, TypeScript, Vite, FastAPI, Pydantic, fetch, local component state, and Git remain appropriate. No database, PDF parser, LLM, or authentication tool was added in Part 1 because no implemented task requires them yet.
+
+Reference: https://tailwindcss.com/docs/installation/using-vite

@@ -1,6 +1,6 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Phase 4 complete.
+Updated after every completed phase. Current milestone: Part 1 complete (phases 1–5). Current local ports: frontend 5178, API 8018.
 
 ## Phase 1 — Project foundation
 Created separate frontend and backend folders, Git ignore rules, and a persistent documentation agreement in AGENTS.md.
@@ -18,3 +18,12 @@ Verification: live HTTP request returned 200 with {"status":"ok","service":"fact
 ## Phase 4 — Browser/API connection
 Added a health component with loading, success, offline, timeout, and retry behavior. Allowed the two exact local frontend origins in FastAPI. This verifies the network boundary before building feature screens.
 Verification: production build passes; live CORS response allows the frontend origin; headless Chrome renders “Backend connected” after a real API request.
+
+## Phase 5 — Navigable application shell
+Built a responsive sidebar/top navigation, breadcrumb, page heading, reusable section metadata, and distinct Documents/Facts/Comparisons empty states. Added clear future-feature labels; upload is disabled and metrics use dashes because no database exists yet. This phase establishes where later document, fact, and relationship features will live after both runtime foundations and the API boundary have been verified.
+
+Hash navigation preserves the section across refresh and browser Back without introducing routing infrastructure for three placeholders. Added focus indicators, a skip link, current-page semantics, live connection status, and reduced-motion handling. Reviewed desktop/mobile screenshots and removed decorative artwork on small screens to keep text clear.
+
+A live check discovered port 5173 serving another local project. Current defaults are **frontend 5178 and backend 8018**; CORS, API config, and README were updated together. Earlier log entries retain the ports used at those checkpoints. Existing unrelated project processes were not stopped.
+
+Verification: TypeScript/production build; real Chrome navigation across all three views; Back and reload; disabled upload; mobile navigation and no horizontal overflow at 390px; simulated failed health request followed by successful retry; no browser exceptions. Added local run instructions in README.md. Part 1 is complete; next is Phase 6, SQLite document records.

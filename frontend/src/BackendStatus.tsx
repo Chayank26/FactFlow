@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8018').replace(/\/$/, '')
 type Status = 'checking' | 'connected' | 'offline'
 
 export default function BackendStatus() {
