@@ -2,6 +2,25 @@
 
 Updated after every completed phase. Current milestone: Part 1 complete (phases 1–5). Current local ports: frontend 5179, API 8019.
 
+## Part 2 planning checkpoint
+
+The next project slice will add persistent document flow rather than more shell UI. The operating plan is a staged progression:
+
+- Phase 6: browser upload request → FastAPI endpoint → SQLite record creation.
+- Phase 7: UI fetches stored documents and shows metadata and state change.
+- Phase 8: uploaded PDFs are processed and extracted facts are stored with source references.
+- Phase 9: comparison screens read the same stored facts and show evidence differences.
+
+Each phase will update the learning logs and pause for review before the next implementation step.
+
+## Phase 6 — SQLite document records and upload API
+
+**User journey:** a browser or API client sends a file to POST /documents. The request includes file bytes and a MIME type. The FastAPI route reads the upload, stores it under backend/data/uploads, and creates a SQLite row with metadata for later use.
+
+**Data flow:** browser upload or test client → FastAPI upload endpoint → file bytes written to disk → SQLite insert with filename, size_bytes, content_type, stored_path, created_at, and status → response includes the persisted record. A later GET /documents reads the database row(s) and returns them to the UI. No extraction or comparison logic is active yet; this phase is intentionally limited to reliably storing the source document itself.
+
+**Storage:** the on-disk folder and SQLite database are local-only, which matches the practice-project goal. Document records are not yet connected to fact extraction, and no document list is rendered in the browser yet. The state is simple: uploaded file exists, metadata is recorded, and list retrieval works.
+
 ## Phase 1 — Project foundation
 User flow: no website runs yet; the developer opens the frontend and backend folders.
 Data flow: reference PDFs remain local files. There is no browser request, server, database, or document processing yet.

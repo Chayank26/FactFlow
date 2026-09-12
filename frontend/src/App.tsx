@@ -8,8 +8,8 @@ const sections = {
   facts: { title: 'Facts', subtitle: 'Every claim, connected to its evidence.', icon: Search, emptyTitle: 'A place for the details that matter.', emptyText: 'Extracted facts will appear here with their values, context, and source passages. Add and process documents once PDF upload is available.' },
   comparisons: { title: 'Comparisons', subtitle: 'See where your sources agree — and why they differ.', icon: GitCompareArrows, emptyTitle: 'Find the context between the claims.', emptyText: 'Compare facts side by side to explore agreement, possible contradictions, and differences explained by context.' },
 }
-function readView(): View {
-  const value = window.location.hash.slice(1)
+function readView(): View { //return type will be a View
+  const value = window.location.hash.slice(1) //if the url is {{URL}}/#facts, this will return 'facts' only
   return value === 'facts' || value === 'comparisons' ? value : 'documents'
 }
 

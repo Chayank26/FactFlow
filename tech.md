@@ -2,6 +2,27 @@
 
 Updated after every completed phase. Current milestone: Part 1 complete (phases 1–5). Current local ports: frontend 5179, API 8019.
 
+## Part 2 planning checkpoint
+
+Part 2 keeps the same architecture but introduces the first persistent layer. The planned stages use the tools already present in the stack and defer additional complexity until the data model is proven:
+
+- SQLite for local document metadata and extracted fact records.
+- FastAPI endpoints for upload, listing, and retrieval operations.
+- React state and fetch calls for document interactions in the browser.
+- PDF parsing only when the storage model is stable enough to support evidence linkage.
+
+This staged sequence keeps each change testable and leaves room for a later switch to a richer OCR or extraction pipeline if the project grows.
+
+## Phase 6 — SQLite document records and upload API
+
+**SQLite:** a lightweight embedded database fits this project’s local-first workflow and keeps setup simple. It is enough for document metadata and later extracted fact records without adding another service or running a separate database container. The trade-off is that the local database file becomes part of the app state and should be treated as development data, not shared production infrastructure.
+
+**FastAPI File uploads:** using UploadFile and multipart form parsing keeps the API aligned with browser uploads. This is a good fit for PDF intake and allows the app to validate file type and size at the route boundary before storing content. A more elaborate upload layer would be useful later, but this is enough for the current document persistence step.
+
+**Data directory layout:** storing uploaded files in backend/data/uploads while SQLite keeps metadata in backend/data/factlayer.db keeps the persistence layer easy to inspect and easy to delete during development. The included PDFs and other reference materials remain outside the database and are not automatically imported.
+
+**Verification:** the upload/list test passes in the project venv with pytest, proving the route writes a file and records it in SQLite. This is the foundation for the next phase’s document list UI.
+
 ## Phase 1 — Project foundation
 **One Git repository with frontend/ and backend/:** one history keeps application changes and learning notes together. Separate repositories would add coordination overhead for this solo practice project. A monorepo orchestrator would add machinery before we have shared packages or complex build dependencies.
 **Git:** local checkpoints make each phase inspectable and reversible. Manual folder backups do not provide useful diffs or coherent history. No hosted service is required to run locally.

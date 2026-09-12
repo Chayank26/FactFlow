@@ -2,6 +2,23 @@
 
 Updated after every completed phase. Current milestone: Part 1 complete (phases 1–5). Current local ports: frontend 5179, API 8019.
 
+## Part 2 planning checkpoint
+
+We are starting Part 2 with a phased approach so each build step stays small and reviewable. Planned phases and goals:
+
+- Phase 6 — SQLite document records and upload API scaffolding.
+- Phase 7 — Document list and metadata screen in the browser.
+- Phase 8 — PDF extraction and fact storage grounded in evidence.
+- Phase 9 — Comparison workflow and context-aware summary experience.
+
+This pause is intentional: after each phase we will update the three learning logs, verify the change, and stop so the user can review the progress before continuing to the next stage.
+
+## Phase 6 — SQLite document records and upload API
+
+Added the first persistent layer: a SQLite-backed document table and upload/list routes in the backend. The upload endpoint writes the file to a local data/uploads directory, records filename, size, type, storage path, timestamp, and status, and exposes a GET /documents list for later UI rendering. This comes before browser document screens so storage is proven before the frontend depends on it.
+
+Verification: the targeted backend test passes with pytest. It uploads a sample file and confirms the document appears in the list response. The endpoint is now ready for the next phase’s document display work.
+
 ## Phase 1 — Project foundation
 Created separate frontend and backend folders, Git ignore rules, and a persistent documentation agreement in AGENTS.md.
 This comes first so browser code and Python processing have clear homes and generated files, credentials, and large reference PDFs do not enter Git accidentally. The supplied PDFs and ZIP stay on disk.
