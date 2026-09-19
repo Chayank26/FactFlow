@@ -28,6 +28,7 @@ type ComparisonRecord = {
   right_page: number
   right_source_text: string
 }
+type RelationshipFilter = '' | 'agreement' | 'difference'
 type FactRecord = {
   id: string
   document_id: string
@@ -70,6 +71,8 @@ export default function App() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [comparisons, setComparisons] = useState<ComparisonRecord[]>([])
   const [loadingComparisons, setLoadingComparisons] = useState(false)
+  const [comparisonDocumentId, setComparisonDocumentId] = useState('')
+  const [comparisonRelationship, setComparisonRelationship] = useState<RelationshipFilter>('')
   const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null)
   const [selectedFacts, setSelectedFacts] = useState<FactRecord[]>([])
   const [loadingDetails, setLoadingDetails] = useState(false)
@@ -82,7 +85,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (view !== 'documents') return
+    if (view !== 'documents' && view !== 'comparisons') return
 
     const controller = new AbortController()
     setLoadingDocuments(true)
@@ -107,7 +110,11 @@ export default function App() {
 
     const controller = new AbortController()
     setLoadingComparisons(true)
-    void fetch(`${apiBase}/comparisons`, { signal: controller.signal })
+    const params = new URLSearchParams()
+    if (comparisonDocumentId) params.set('document_id', comparisonDocumentId)
+    if (comparisonRelationship) params.set('relationship', comparisonRelationship)
+    const query = params.toString()
+    void fetch(`${apiBase}/comparisons${query ? `?${query}` : ''}`, { signal: controller.signal })
       .then(async response => {
         if (!response.ok) throw new Error('Could not load comparisons')
         const data = await response.json() as ComparisonRecord[]
@@ -121,7 +128,7 @@ export default function App() {
       })
 
     return () => controller.abort()
-  }, [view])
+  }, [view, comparisonDocumentId, comparisonRelationship])
 
   useEffect(() => { document.title = `${sections[view].title} · Fact Layer` }, [view])
 
@@ -296,6 +303,21 @@ export default function App() {
             </div>
           ) : view === 'comparisons' ? (
             <div className="comparison-panel">
+              <div className="comparison-filters" aria-label="Comparison filters">
+                <label>Source
+                  <select value={comparisonDocumentId} onChange={event => setComparisonDocumentId(event.target.value)}>
+                    <option value="">All documents</option>
+                    {documents.map(document => <option key={document.id} value={document.id}>{document.filename}</option>)}
+                  </select>
+                </label>
+                <label>Relationship
+                  <select value={comparisonRelationship} onChange={event => setComparisonRelationship(event.target.value as RelationshipFilter)}>
+                    <option value="">All relationships</option>
+                    <option value="agreement">Agreement</option>
+                    <option value="difference">Difference</option>
+                  </select>
+                </label>
+              </div>
               {loadingComparisons ? (
                 <div className="document-loading">Finding connections…</div>
               ) : comparisons.length === 0 ? (

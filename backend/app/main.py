@@ -333,7 +333,13 @@ def claim_tokens(claim: str) -> set[str]:
 
 
 @app.get("/comparisons", response_model=list[ComparisonResponse])
-def list_comparisons() -> list[ComparisonResponse]:
+def list_comparisons(
+    document_id: str | None = None,
+    relationship: str | None = None,
+) -> list[ComparisonResponse]:
+    if relationship not in (None, "agreement", "difference"):
+        raise HTTPException(status_code=400, detail="Unsupported comparison relationship")
+
     with get_connection() as connection:
         rows = connection.execute(
             """
@@ -353,6 +359,8 @@ def list_comparisons() -> list[ComparisonResponse]:
         for right in rows[index + 1:]:
             if left["document_id"] == right["document_id"]:
                 continue
+            if document_id and document_id not in (left["document_id"], right["document_id"]):
+                continue
 
             right_tokens = claim_tokens(right["claim"])
             if not right_tokens:
@@ -360,18 +368,20 @@ def list_comparisons() -> list[ComparisonResponse]:
             shared_tokens = left_tokens & right_tokens
             similarity = len(shared_tokens) / max(len(left_tokens), len(right_tokens))
             if similarity == 1:
-                relationship = "agreement"
+                relationship_type = "agreement"
                 summary = "Both sources make the same claim."
             elif similarity >= 0.5:
-                relationship = "difference"
+                relationship_type = "difference"
                 summary = "The sources discuss the same subject with different details."
             else:
+                continue
+            if relationship and relationship != relationship_type:
                 continue
 
             comparisons.append(
                 ComparisonResponse(
                     id=f"{left['id']}:{right['id']}",
-                    relationship=relationship,
+                    relationship=relationship_type,
                     summary=summary,
                     left_document_id=left["document_id"],
                     left_document_name=left["document_name"],

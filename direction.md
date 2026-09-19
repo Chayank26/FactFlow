@@ -1,6 +1,6 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 4 complete. Current local ports: frontend 5179, API 8019.
 
 ## Part 3 progress checkpoint
 
@@ -17,6 +17,12 @@ Verification: the focused backend suite passes with 5 tests covering document st
 Improved the deterministic PDF extractor so it splits sentence-level claims, filters empty and low-signal noise, and removes repeated claims case-insensitively across a document. Existing page and source-text provenance remains attached to every retained fact. Image-only PDFs remain outside this phase because they require OCR rather than text extraction.
 
 Verification: the backend suite passes with 6 tests, including a regression test for sentence splitting, noise filtering, and deduplication. The frontend production build passes. The phase is paused for review.
+
+## Part 3 Phase 4 — Comparison improvements
+
+Added server-backed comparison filters for source document and relationship type, with validation for unsupported relationship values. The Comparisons view now loads available documents when opened and refetches results when either filter changes, while retaining the existing evidence-first comparison cards.
+
+Verification: the full focused backend suite passes with 7 tests and the frontend production build passes. The phase is paused for review.
 
 ## Part 2 planning checkpoint
 

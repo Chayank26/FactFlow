@@ -1,6 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 Phase 4 — Comparison improvements
+
+**Server-side filtering:** document and relationship filters are query parameters on the existing comparisons endpoint. Filtering before response construction keeps the browser payload smaller and ensures all clients receive the same relationship semantics.
+
+**Validated relationship values:** the API accepts only agreement and difference. Returning a 400 for unsupported values makes client mistakes visible and prevents silent empty states from being misread as “no comparisons.”
+
+**Native selects:** the UI uses accessible native select controls because the filter sets are small and stable. A heavier combobox would add interaction complexity without improving this workflow yet.
+
+**Verification:** 7 backend tests and the frontend production build pass. Existing Starlette/httpx deprecation warnings remain non-blocking.
 
 ## Part 3 Phase 3 — Extraction quality
 

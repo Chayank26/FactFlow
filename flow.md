@@ -1,6 +1,14 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 Phase 4 — Comparison improvements
+
+**User journey:** open Comparisons → choose a source document and/or Agreement or Difference → the browser requests the filtered comparison set → matching evidence cards remain visible with both source contexts. Unsupported relationship values are rejected by the API rather than silently returning misleading results.
+
+**Data flow:** filter controls → URL query parameters → `GET /comparisons` → server-side document/relationship filtering → React comparison state → rendered cards. The document options come from the same document list endpoint, so the UI does not invent a separate source registry.
+
+**Current state:** filters are held in browser memory and reset on reload. Comparisons remain derived at request time from facts; this phase adds selection and narrowing without introducing persisted comparison state.
 
 ## Part 3 Phase 3 — Extraction quality
 
