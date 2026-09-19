@@ -1,6 +1,14 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 1 complete; Phases 2–6 also complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 1 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 1 — Database and migration hardening
+
+**User/developer journey:** the backend starts → existing `backend/data/factlayer.db` is opened or created → schema version and indexes are checked/applied → API operations continue against the preserved database. A developer can back up the file before experiments or remove `backend/data` to reset local state.
+
+**Data flow:** backend startup → SQLite schema initialization → `PRAGMA user_version` upgrade to version 1 → index creation → document/fact endpoints. No user-facing document or fact data is transformed by this phase.
+
+**Current state:** runtime data remains local and ignored by Git. The schema has a version marker and the most common document/fact access paths have indexes; future schema changes can build on this boundary.
 
 ## Part 3 Phase 6 — Polish and documentation
 

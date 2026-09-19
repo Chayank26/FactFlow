@@ -14,6 +14,7 @@ DATA_DIR = BASE_DIR / "data"
 UPLOADS_DIR = DATA_DIR / "uploads"
 DB_PATH = DATA_DIR / "factlayer.db"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+SCHEMA_VERSION = 1
 
 
 def init_db() -> None:
@@ -48,6 +49,12 @@ def init_db() -> None:
             )
             """
         )
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_facts_document_id ON facts (document_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_facts_created_at ON facts (created_at)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents (created_at)")
+        current_version = connection.execute("PRAGMA user_version").fetchone()[0]
+        if current_version < SCHEMA_VERSION:
+            connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         connection.commit()
 
 

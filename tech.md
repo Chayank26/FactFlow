@@ -1,6 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 1 complete; Phases 2–6 also complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 1 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 1 — Database and migration hardening
+
+**SQLite `user_version`:** the built-in schema version marker provides a dependency-free migration boundary appropriate for this local application. Startup applies the current version and indexes without replacing existing data. A dedicated migration framework can be introduced if the schema gains multiple deployed versions or rollback requirements.
+
+**Indexes:** document creation ordering and fact lookup/order are indexed because those paths back the current list, detail, and comparison workflows. Indexes use `IF NOT EXISTS` so startup is repeatable.
+
+**Operational guidance:** the README now documents a simple file backup and a deliberate local reset. This is transparent for a practice project, but it is not a substitute for production backups, migrations, or deployment tooling.
+
+**Verification:** 12 backend tests and the frontend production build pass. Existing Starlette/httpx deprecation warnings remain non-blocking.
 
 ## Part 3 Phase 6 — Polish and documentation
 

@@ -1,6 +1,12 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 1 complete; Phases 2–6 also complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 1 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 1 — Database and migration hardening
+
+Added an explicit SQLite schema version, indexes for document/fact lookup and ordering, and a startup upgrade boundary that preserves existing local data. Added operational README guidance for backing up and resetting the ignored development database.
+
+Verification: the schema test confirms `user_version = 1` and the fact lookup index; the full backend suite passes with 12 tests and the frontend production build passes. This is a local development migration boundary, not production database infrastructure.
 
 ## Part 3 progress checkpoint
 

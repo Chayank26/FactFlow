@@ -43,6 +43,22 @@ Then open the website with both servers running. Upload a PDF, search and filter
 
 The backend suite covers upload, PDF extraction, evidence references, document lifecycle, comparison filters, and failure paths. The frontend build is a compile-time check; browser interaction coverage remains a future improvement. This is not a full accessibility audit.
 
+## Local database maintenance
+
+The development database is `backend/data/factlayer.db` and is intentionally ignored by Git. Back it up before manual experiments:
+
+```sh
+cp backend/data/factlayer.db /tmp/factlayer-backup.db
+```
+
+To reset local documents, facts, and uploaded files, stop the backend and remove the runtime data directory. The next backend start recreates the schema:
+
+```sh
+rm -rf backend/data
+```
+
+The API applies the current SQLite schema version and indexes automatically when it starts. This is a local development migration boundary, not a production backup system.
+
 ## Learning logs
 
 - [direction.md](direction.md): why each phase's steps came at that point and how completion was verified.
