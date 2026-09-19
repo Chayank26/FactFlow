@@ -1,6 +1,12 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 3 — Extraction pipeline hardening
+
+Changed extraction success to require at least one retained fact. Valid PDFs with no extractable text now receive `extraction_failed` rather than the misleading `processed` status, while their source file remains available for inspection and future OCR/reprocessing. Updated a stale test fixture to satisfy the existing minimum-signal rule.
+
+Verification: the full backend suite passes with 17 tests and the frontend production build passes. OCR for image-only PDFs remains intentionally deferred.
 
 ## Part 4 Phase 2 — Upload and API security hardening
 

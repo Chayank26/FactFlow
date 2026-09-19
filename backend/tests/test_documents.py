@@ -9,7 +9,7 @@ client = TestClient(app)
 def test_upload_and_list_documents():
     response = client.post(
         "/documents",
-        files={"file": ("sample.pdf", make_pdf("hello world"), "application/pdf")},
+        files={"file": ("sample.pdf", make_pdf("A meaningful claim."), "application/pdf")},
     )
 
     assert response.status_code == 200, response.text

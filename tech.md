@@ -1,6 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 3 — Extraction pipeline hardening
+
+**Success criterion:** parser completion is not enough to claim processing success. `extract_facts` now requires at least one retained fact after sentence splitting, quality filtering, and deduplication. This makes the document status reflect usable output rather than only the absence of a parser exception.
+
+**Failure preservation:** textless PDFs remain stored with `extraction_failed`, matching the existing malformed-PDF behavior and allowing a future reprocess/OCR path without requiring another upload.
+
+**OCR boundary:** no OCR dependency or external service was added. OCR has different native binaries, runtime cost, and deployment requirements, so it should be introduced as a separate processor with its own tests and status model.
+
+**Verification:** 17 backend tests and the frontend production build pass. Existing Starlette/httpx deprecation warnings remain non-blocking.
 
 ## Part 4 Phase 2 — Upload and API security hardening
 

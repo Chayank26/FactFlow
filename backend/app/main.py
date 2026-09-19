@@ -161,6 +161,8 @@ def extract_facts(file_path: Path, document_id: str) -> list[FactResponse]:
                 )
             )
 
+    if not extracted:
+        raise ValueError("The PDF contains no extractable text")
     return extracted
 
 

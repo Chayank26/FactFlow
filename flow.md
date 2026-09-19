@@ -1,6 +1,14 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 3 — Extraction pipeline hardening
+
+**User journey:** upload or reprocess a valid text-based PDF → extracted facts are stored and status becomes `processed`. Upload a valid PDF with no extractable text → the file remains stored, no facts are created, and status becomes `extraction_failed` so the user can distinguish “nothing readable” from successful processing.
+
+**Data flow:** PDF parser → sentence/noise/deduplication pipeline → retained facts → success status. If the retained fact set is empty, extraction raises a clear failure condition and the existing document lifecycle records the failure.
+
+**Current state:** text-bearing PDFs work through the existing document, fact, and comparison flows. Scanned/image-only PDFs now fail explicitly instead of appearing complete, pending a future OCR processor.
 
 ## Part 4 Phase 2 — Upload and API security hardening
 
