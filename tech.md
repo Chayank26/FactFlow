@@ -23,6 +23,16 @@ This staged sequence keeps each change testable and leaves room for a later swit
 
 **Verification:** the upload/list test passes in the project venv with pytest, proving the route writes a file and records it in SQLite. This is the foundation for the next phase’s document list UI.
 
+## Phase 7 — Document list and metadata screen
+
+**React fetch and local state:** the Documents screen uses the existing fetch-based approach rather than adding a data-fetching library. The small number of records and one upload action do not yet justify caching or global state. An AbortController prevents a stale list request from updating the component after navigation.
+
+**Multipart browser upload:** a native file input and FormData send the selected file without manually setting the Content-Type header. The browser supplies the multipart boundary, while the FastAPI UploadFile route receives the file and persists it.
+
+**Metadata presentation:** the UI formats byte counts and ISO timestamps at the display boundary, leaving API values structured and stable for later filtering or document detail views. The status is displayed as returned by the backend rather than inferred in the browser.
+
+**Verification:** the frontend production build passes after correcting the new type-only React import. No PDF extraction library was added in this phase; the next phase will introduce it only alongside evidence storage.
+
 ## Phase 1 — Project foundation
 **One Git repository with frontend/ and backend/:** one history keeps application changes and learning notes together. Separate repositories would add coordination overhead for this solo practice project. A monorepo orchestrator would add machinery before we have shared packages or complex build dependencies.
 **Git:** local checkpoints make each phase inspectable and reversible. Manual folder backups do not provide useful diffs or coherent history. No hosted service is required to run locally.

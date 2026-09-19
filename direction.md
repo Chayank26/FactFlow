@@ -19,6 +19,12 @@ Added the first persistent layer: a SQLite-backed document table and upload/list
 
 Verification: the targeted backend test passes with pytest. It uploads a sample file and confirms the document appears in the list response. The endpoint is now ready for the next phase’s document display work.
 
+## Phase 7 — Document list and metadata screen
+
+Connected the Documents view to GET /documents and added a working PDF upload control that sends files to POST /documents. Uploaded records now appear with filename, status, file size, content type, and creation date; the Documents summary card also shows the stored count. This phase makes the Phase 6 persistence layer visible and usable in the browser.
+
+Verification: the frontend TypeScript and Vite production build passes. The first build caught and fixed a type-only import requirement in the new upload handler. The phase is paused for review before PDF extraction begins.
+
 ## Phase 1 — Project foundation
 Created separate frontend and backend folders, Git ignore rules, and a persistent documentation agreement in AGENTS.md.
 This comes first so browser code and Python processing have clear homes and generated files, credentials, and large reference PDFs do not enter Git accidentally. The supplied PDFs and ZIP stay on disk.

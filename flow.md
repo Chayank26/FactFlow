@@ -21,6 +21,14 @@ Each phase will update the learning logs and pause for review before the next im
 
 **Storage:** the on-disk folder and SQLite database are local-only, which matches the practice-project goal. Document records are not yet connected to fact extraction, and no document list is rendered in the browser yet. The state is simple: uploaded file exists, metadata is recorded, and list retrieval works.
 
+## Phase 7 — Document list and metadata screen
+
+**User journey:** open the Documents view → the browser requests the saved document list → existing uploads appear as metadata rows. Select Upload PDF → choose a local file → the browser sends multipart data to POST /documents → the new record is inserted at the top of the list.
+
+**Data flow:** React mounts the Documents view → fetches GET /documents from the configured API → stores the returned records in component state → renders count, filename, status, size, MIME type, and date. Upload state displays while POST /documents is in progress; success adds the API response to the list, and failure shows a local error message. Facts and Comparisons still use their planned empty states.
+
+**Storage:** the browser does not store document bytes. It sends them to FastAPI, which writes the file and returns metadata. The browser only keeps the current list in memory and reloads it when the Documents view mounts.
+
 ## Phase 1 — Project foundation
 User flow: no website runs yet; the developer opens the frontend and backend folders.
 Data flow: reference PDFs remain local files. There is no browser request, server, database, or document processing yet.
