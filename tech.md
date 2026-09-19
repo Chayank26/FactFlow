@@ -1,6 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 Phase 3 — Extraction quality
+
+**Sentence splitting:** a small regular-expression boundary keeps the extractor dependency-free while turning parser lines containing multiple claims into separate facts. It is intentionally conservative and handles common terminal punctuation rather than attempting full natural-language parsing.
+
+**Quality filter:** claims must contain at least three alphanumeric words and five alphabetic characters. This removes separators and empty extraction artifacts without pretending to judge the truth or importance of a claim.
+
+**Document-level deduplication:** case-folded claim strings provide an explainable exact duplicate check. Semantic duplicates remain available for later matching in the comparison layer rather than being discarded here.
+
+**Verification:** 6 backend tests and the frontend production build pass. OCR was not added because scanned-PDF support is a separate capability with different runtime and dependency trade-offs.
 
 ## Part 3 Phase 2 — Document management
 

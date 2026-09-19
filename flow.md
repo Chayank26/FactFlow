@@ -1,6 +1,14 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 Phase 3 — Extraction quality
+
+**User journey:** upload or reprocess a text-based PDF → sentence-sized claims are extracted → low-quality lines are ignored → repeated claims are kept once → the resulting facts appear with their original page and source text. Scanned PDFs still need a future OCR path and remain clearly bounded by the current text extraction behavior.
+
+**Data flow:** pypdf page text → normalized lines → sentence splitting on terminal punctuation → minimum signal filter → case-insensitive document-level deduplication → facts table. No new browser request is required because upload, reprocess, and document detail already consume the same facts endpoint.
+
+**Current state:** extraction remains deterministic and local. The source text stored for each fact is the retained claim text, preserving the evidence shown by the current parser while avoiding duplicate or noise-only records.
 
 ## Part 3 Phase 2 — Document management
 

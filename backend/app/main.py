@@ -1,4 +1,5 @@
 import sqlite3
+import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -111,17 +112,34 @@ def health() -> HealthResponse:
     return HealthResponse(status="ok", service="fact-layer-api")
 
 
+def split_claims(text: str) -> list[str]:
+    claims: list[str] = []
+    for line in text.splitlines():
+        normalized_line = " ".join(line.split())
+        if not normalized_line:
+            continue
+        for sentence in re.split(r"(?<=[.!?])\s+", normalized_line):
+            claim = sentence.strip()
+            words = re.findall(r"[A-Za-z0-9]+", claim)
+            if len(words) < 3 or sum(character.isalpha() for character in claim) < 5:
+                continue
+            claims.append(claim)
+    return claims
+
+
 def extract_facts(file_path: Path, document_id: str) -> list[FactResponse]:
     reader = PdfReader(str(file_path))
     extracted: list[FactResponse] = []
+    seen_claims: set[str] = set()
     created_at = datetime.now(timezone.utc).isoformat()
 
     for page_number, page in enumerate(reader.pages, start=1):
         text = page.extract_text() or ""
-        for line in text.splitlines():
-            claim = " ".join(line.split())
-            if not claim:
+        for claim in split_claims(text):
+            normalized_claim = claim.casefold()
+            if normalized_claim in seen_claims:
                 continue
+            seen_claims.add(normalized_claim)
             extracted.append(
                 FactResponse(
                     id=str(uuid.uuid4()),
