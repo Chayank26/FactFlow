@@ -1,6 +1,14 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 Phase 5 — Reliability and regression coverage
+
+**SQLite foreign keys:** SQLite does not enforce foreign keys unless enabled per connection, so `PRAGMA foreign_keys = ON` is now applied both during initialization and whenever a connection is opened. This protects the document/fact relationship across all API operations.
+
+**Visible load errors:** empty results and failed requests have different meanings. The frontend keeps dedicated error state for Documents and Comparisons and ignores expected aborts, preventing misleading empty screens during outages or navigation.
+
+**Regression scope:** the backend suite now covers 11 focused behaviors across extraction quality, document lifecycle, comparison filters, and reliability failures. Existing Starlette/httpx deprecation warnings remain non-blocking.
 
 ## Part 3 Phase 4 — Comparison improvements
 

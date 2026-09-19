@@ -1,6 +1,14 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 Phase 5 — Reliability and regression coverage
+
+**User journey:** when Documents or Comparisons cannot load, the user sees an explicit error panel rather than an empty-state message that could imply there is no data. Navigating away while a request is active cancels it without showing a failure. Backend operations for missing documents return clear 404 responses.
+
+**Data flow:** API failure → React error state → accessible alert panel. Request cancellation → AbortController signal → ignored catch path. SQLite insert/delete operations run with foreign-key enforcement enabled, so fact rows cannot point to nonexistent documents.
+
+**Current state:** upload, processing, deletion, and derived comparison behavior are covered by regression tests. The remaining Part 3 polish phase can now focus on broader documentation, browser-level interaction coverage, and cleanup of development data.
 
 ## Part 3 Phase 4 — Comparison improvements
 

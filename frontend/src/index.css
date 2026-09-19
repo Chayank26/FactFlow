@@ -97,6 +97,7 @@ h1 { font-size: 30px; line-height: 1.25; font-weight: 650; letter-spacing: -.9px
 .document-meta { display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 10px; color: #64756b; }
 .document-meta span { white-space: nowrap; }
 .document-loading { padding: 18px 14px 8px; color: #64756b; font-size: 12px; }
+.error-panel { padding: 16px; border: 1px solid #efd8cb; border-radius: 7px; background: #fff8f4; color: #934a2b; font-size: 11px; line-height: 1.6; }
 .error-text { font-size: 10px; color: #a0522c; }
 .management-error { margin-top: 12px; }
 .document-detail { margin-top: 20px; padding: 18px; border-top: 1px solid #e5ece6; background: #f8fbf8; }

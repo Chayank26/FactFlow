@@ -1,6 +1,6 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 5 complete. Current local ports: frontend 5179, API 8019.
 
 ## Part 3 progress checkpoint
 
@@ -23,6 +23,12 @@ Verification: the backend suite passes with 6 tests, including a regression test
 Added server-backed comparison filters for source document and relationship type, with validation for unsupported relationship values. The Comparisons view now loads available documents when opened and refetches results when either filter changes, while retaining the existing evidence-first comparison cards.
 
 Verification: the full focused backend suite passes with 7 tests and the frontend production build passes. The phase is paused for review.
+
+## Part 3 Phase 5 — Reliability and regression coverage
+
+Enabled SQLite foreign-key enforcement for every database connection and added explicit regression coverage for missing-document operations, malformed PDFs, oversized uploads, and orphaned facts. The browser now reports document and comparison loading failures instead of silently rendering empty states, and aborted navigation requests do not create false errors.
+
+Verification: the full focused backend suite passes with 11 tests and the frontend production build passes. The phase is paused for review.
 
 ## Part 2 planning checkpoint
 

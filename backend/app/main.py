@@ -21,6 +21,7 @@ def init_db() -> None:
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(DB_PATH) as connection:
+        connection.execute("PRAGMA foreign_keys = ON")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS documents (
@@ -52,6 +53,7 @@ def init_db() -> None:
 
 def get_connection() -> sqlite3.Connection:
     connection = sqlite3.connect(DB_PATH)
+    connection.execute("PRAGMA foreign_keys = ON")
     connection.row_factory = sqlite3.Row
     return connection
 

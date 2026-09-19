@@ -67,10 +67,12 @@ export default function App() {
   const [view, setView] = useState<View>(readView)
   const [documents, setDocuments] = useState<DocumentRecord[]>([])
   const [loadingDocuments, setLoadingDocuments] = useState(false)
+  const [documentsError, setDocumentsError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [comparisons, setComparisons] = useState<ComparisonRecord[]>([])
   const [loadingComparisons, setLoadingComparisons] = useState(false)
+  const [comparisonsError, setComparisonsError] = useState<string | null>(null)
   const [comparisonDocumentId, setComparisonDocumentId] = useState('')
   const [comparisonRelationship, setComparisonRelationship] = useState<RelationshipFilter>('')
   const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null)
@@ -89,6 +91,7 @@ export default function App() {
 
     const controller = new AbortController()
     setLoadingDocuments(true)
+    setDocumentsError(null)
     void fetch(`${apiBase}/documents`, { signal: controller.signal })
       .then(async response => {
         if (!response.ok) throw new Error('Could not load documents')
@@ -96,7 +99,10 @@ export default function App() {
         setDocuments(Array.isArray(data) ? data : [])
       })
       .catch(() => {
-        setDocuments([])
+        if (!controller.signal.aborted) {
+          setDocuments([])
+          setDocumentsError('Documents could not be loaded. Check the backend connection and try again.')
+        }
       })
       .finally(() => {
         setLoadingDocuments(false)
@@ -110,6 +116,7 @@ export default function App() {
 
     const controller = new AbortController()
     setLoadingComparisons(true)
+    setComparisonsError(null)
     const params = new URLSearchParams()
     if (comparisonDocumentId) params.set('document_id', comparisonDocumentId)
     if (comparisonRelationship) params.set('relationship', comparisonRelationship)
@@ -121,7 +128,10 @@ export default function App() {
         setComparisons(Array.isArray(data) ? data : [])
       })
       .catch(() => {
-        setComparisons([])
+        if (!controller.signal.aborted) {
+          setComparisons([])
+          setComparisonsError('Comparisons could not be loaded. Check the backend connection and try again.')
+        }
       })
       .finally(() => {
         setLoadingComparisons(false)
@@ -252,6 +262,8 @@ export default function App() {
 
               {loadingDocuments ? (
                 <div className="document-loading">Loading documents…</div>
+              ) : documentsError ? (
+                <div className="error-panel" role="alert">{documentsError}</div>
               ) : documents.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-icon"><EmptyIcon size={27} strokeWidth={1.4} /></div>
@@ -318,7 +330,9 @@ export default function App() {
                   </select>
                 </label>
               </div>
-              {loadingComparisons ? (
+              {comparisonsError ? (
+                <div className="error-panel" role="alert">{comparisonsError}</div>
+              ) : loadingComparisons ? (
                 <div className="document-loading">Finding connections…</div>
               ) : comparisons.length === 0 ? (
                 <div className="empty-state">
