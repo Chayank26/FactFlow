@@ -89,6 +89,22 @@ class FactResponse(BaseModel):
     created_at: str
 
 
+class ComparisonResponse(BaseModel):
+    id: str
+    relationship: str
+    summary: str
+    left_document_id: str
+    left_document_name: str
+    left_claim: str
+    left_page: int
+    left_source_text: str
+    right_document_id: str
+    right_document_name: str
+    right_claim: str
+    right_page: int
+    right_source_text: str
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(status="ok", service="fact-layer-api")
@@ -224,3 +240,64 @@ def list_facts(document_id: str | None = None) -> list[FactResponse]:
         )
         for row in rows
     ]
+
+
+def claim_tokens(claim: str) -> set[str]:
+    return {token.strip(".,:;!?()[]{}").lower() for token in claim.split() if token.strip(".,:;!?()[]{}")}
+
+
+@app.get("/comparisons", response_model=list[ComparisonResponse])
+def list_comparisons() -> list[ComparisonResponse]:
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT facts.id, facts.document_id, facts.claim, facts.source_page, facts.source_text,
+                   documents.filename AS document_name
+            FROM facts
+            JOIN documents ON documents.id = facts.document_id
+            ORDER BY facts.created_at DESC, facts.source_page ASC
+            """
+        ).fetchall()
+
+    comparisons: list[ComparisonResponse] = []
+    for index, left in enumerate(rows):
+        left_tokens = claim_tokens(left["claim"])
+        if not left_tokens:
+            continue
+        for right in rows[index + 1:]:
+            if left["document_id"] == right["document_id"]:
+                continue
+
+            right_tokens = claim_tokens(right["claim"])
+            if not right_tokens:
+                continue
+            shared_tokens = left_tokens & right_tokens
+            similarity = len(shared_tokens) / max(len(left_tokens), len(right_tokens))
+            if similarity == 1:
+                relationship = "agreement"
+                summary = "Both sources make the same claim."
+            elif similarity >= 0.5:
+                relationship = "difference"
+                summary = "The sources discuss the same subject with different details."
+            else:
+                continue
+
+            comparisons.append(
+                ComparisonResponse(
+                    id=f"{left['id']}:{right['id']}",
+                    relationship=relationship,
+                    summary=summary,
+                    left_document_id=left["document_id"],
+                    left_document_name=left["document_name"],
+                    left_claim=left["claim"],
+                    left_page=left["source_page"],
+                    left_source_text=left["source_text"],
+                    right_document_id=right["document_id"],
+                    right_document_name=right["document_name"],
+                    right_claim=right["claim"],
+                    right_page=right["source_page"],
+                    right_source_text=right["source_text"],
+                )
+            )
+
+    return comparisons

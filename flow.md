@@ -37,6 +37,14 @@ Each phase will update the learning logs and pause for review before the next im
 
 **Storage:** facts are local SQLite records with a foreign-key relationship to documents. Extraction is intentionally deterministic and does not call an LLM; this keeps the evidence boundary inspectable while the data model is being proven. Frontend fact rendering and comparison behavior remain planned work.
 
+## Phase 9 — Comparison workflow and context-aware evidence
+
+**User journey:** open Comparisons → the browser requests relationships from GET /comparisons → matched claims appear as agreement or difference cards → each side shows its document, claim, page, and retained source text. With no related facts, the view remains an honest empty state and directs the user back to Documents.
+
+**Data flow:** stored facts joined with document filenames → deterministic token overlap across facts from different documents → exact matches become agreement, shared-subject matches with differing details become difference → API returns both evidence contexts → React renders the comparison cards. Facts from the same document are excluded because comparison is intended to reveal relationships across sources.
+
+**Storage:** comparisons are derived at request time rather than persisted. This avoids stale comparison records when extraction changes and keeps the database focused on source documents and facts. The returned comparison ID is a stable pair identifier for the current fact records.
+
 ## Phase 1 — Project foundation
 User flow: no website runs yet; the developer opens the frontend and backend folders.
 Data flow: reference PDFs remain local files. There is no browser request, server, database, or document processing yet.

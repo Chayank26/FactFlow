@@ -13,6 +13,21 @@ type DocumentRecord = {
   created_at: string
   status: string
 }
+type ComparisonRecord = {
+  id: string
+  relationship: 'agreement' | 'difference'
+  summary: string
+  left_document_id: string
+  left_document_name: string
+  left_claim: string
+  left_page: number
+  left_source_text: string
+  right_document_id: string
+  right_document_name: string
+  right_claim: string
+  right_page: number
+  right_source_text: string
+}
 
 const sections = {
   documents: { title: 'Documents', subtitle: 'The starting point for everything you know.', icon: Files, emptyTitle: 'Good knowledge starts with a source.', emptyText: 'Your documents will live here. Soon, you’ll be able to upload PDFs and turn scattered information into traceable facts.' },
@@ -45,6 +60,8 @@ export default function App() {
   const [loadingDocuments, setLoadingDocuments] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [comparisons, setComparisons] = useState<ComparisonRecord[]>([])
+  const [loadingComparisons, setLoadingComparisons] = useState(false)
 
   useEffect(() => {
     const onHashChange = () => setView(readView())
@@ -68,6 +85,27 @@ export default function App() {
       })
       .finally(() => {
         setLoadingDocuments(false)
+      })
+
+    return () => controller.abort()
+  }, [view])
+
+  useEffect(() => {
+    if (view !== 'comparisons') return
+
+    const controller = new AbortController()
+    setLoadingComparisons(true)
+    void fetch(`${apiBase}/comparisons`, { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('Could not load comparisons')
+        const data = await response.json() as ComparisonRecord[]
+        setComparisons(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        setComparisons([])
+      })
+      .finally(() => {
+        setLoadingComparisons(false)
       })
 
     return () => controller.abort()
@@ -173,6 +211,43 @@ export default function App() {
                           <span>{formatBytes(document.size_bytes)}</span>
                           <span>{document.content_type || 'unknown type'}</span>
                           <span>{formatDate(document.created_at)}</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : view === 'comparisons' ? (
+            <div className="comparison-panel">
+              {loadingComparisons ? (
+                <div className="document-loading">Finding connections…</div>
+              ) : comparisons.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon"><EmptyIcon size={27} strokeWidth={1.4} /></div>
+                  <h3>{section.emptyTitle}</h3>
+                  <p>{section.emptyText}</p>
+                  <a className="back-link" href="#documents">Go to documents <ArrowRight size={16} /></a>
+                </div>
+              ) : (
+                <div className="comparison-list">
+                  {comparisons.map(comparison => (
+                    <article key={comparison.id} className="comparison-card">
+                      <div className="comparison-card-header">
+                        <span className={`relationship-label ${comparison.relationship}`}>{comparison.relationship}</span>
+                        <span className="comparison-summary">{comparison.summary}</span>
+                      </div>
+                      <div className="comparison-sources">
+                        <div className="comparison-source">
+                          <strong>{comparison.left_document_name}</strong>
+                          <p>{comparison.left_claim}</p>
+                          <span>Page {comparison.left_page} · {comparison.left_source_text}</span>
+                        </div>
+                        <div className="comparison-divider" aria-hidden="true"><GitCompareArrows size={16} /></div>
+                        <div className="comparison-source">
+                          <strong>{comparison.right_document_name}</strong>
+                          <p>{comparison.right_claim}</p>
+                          <span>Page {comparison.right_page} · {comparison.right_source_text}</span>
                         </div>
                       </div>
                     </article>

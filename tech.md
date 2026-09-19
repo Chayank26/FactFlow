@@ -43,6 +43,16 @@ This staged sequence keeps each change testable and leaves room for a later swit
 
 **Verification:** the focused backend suite passes with 2 tests. It covers document upload/list behavior and a real generated PDF upload through extraction, persistence, and filtered retrieval. The lock file records the installed pypdf version for repeatable setup.
 
+## Phase 9 — Comparison workflow and context-aware evidence
+
+**Derived comparisons:** comparison relationships are computed from facts at read time instead of stored in another table. This keeps the first version simple and prevents comparison data from becoming stale when source facts are reprocessed. A persisted comparison model can be introduced later if ranking, review state, or user annotations require it.
+
+**Token overlap heuristic:** normalized token sets provide an explainable baseline for finding same-subject claims without an LLM. Exact token-set matches represent agreement; at least half shared tokens with remaining differences represent a difference. The heuristic is intentionally conservative and should be replaced or augmented with semantic matching when the project has enough real examples to evaluate it.
+
+**Evidence-first UI:** each comparison renders both claims and source text with page numbers and filenames. The interface reports the relationship as derived context rather than presenting a conclusion without the underlying passages.
+
+**Verification:** the focused backend suite passes with 3 tests, including a real two-document comparison, and the frontend production build passes. This completes the planned Part 2 phases.
+
 ## Phase 1 — Project foundation
 **One Git repository with frontend/ and backend/:** one history keeps application changes and learning notes together. Separate repositories would add coordination overhead for this solo practice project. A monorepo orchestrator would add machinery before we have shared packages or complex build dependencies.
 **Git:** local checkpoints make each phase inspectable and reversible. Manual folder backups do not provide useful diffs or coherent history. No hosted service is required to run locally.
