@@ -1,6 +1,16 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 1 complete (phases 1–5). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 progress checkpoint
+
+Part 3 is focused on making the Part 2 workflow reliable and usable beyond the initial happy path. Phase 1 remains the planned fact browser and has not been marked complete here. Phase 2 is now complete: documents can be inspected, reprocessed, deleted, and validated at the API and browser boundaries.
+
+## Part 3 Phase 2 — Document management
+
+Added document detail retrieval, PDF-only upload validation, a 10 MB size limit, PDF reprocessing, and deletion of documents together with their extracted facts and stored files. The Documents view now provides detail, reprocess, and delete actions, and shows the document’s extracted evidence in the detail panel.
+
+Verification: the focused backend suite passes with 5 tests covering document storage, extraction, comparisons, detail/reprocess/delete behavior, and invalid upload rejection. The frontend production build passes. The phase is paused for review.
 
 ## Part 2 planning checkpoint
 

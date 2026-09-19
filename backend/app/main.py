@@ -12,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 UPLOADS_DIR = DATA_DIR / "uploads"
 DB_PATH = DATA_DIR / "factlayer.db"
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
 def init_db() -> None:
@@ -60,7 +61,7 @@ app = FastAPI(title="Fact Layer API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5179", "http://127.0.0.1:5179"],
-    allow_methods=["GET", "POST"],
+    allow_methods=["DELETE", "GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -135,27 +136,80 @@ def extract_facts(file_path: Path, document_id: str) -> list[FactResponse]:
     return extracted
 
 
+def document_from_row(row: sqlite3.Row) -> DocumentResponse:
+    return DocumentResponse(
+        id=row["id"],
+        filename=row["filename"],
+        size_bytes=row["size_bytes"],
+        content_type=row["content_type"],
+        stored_path=row["stored_path"],
+        created_at=row["created_at"],
+        status=row["status"],
+    )
+
+
+def get_document_row(document_id: str) -> sqlite3.Row:
+    with get_connection() as connection:
+        row = connection.execute(
+            "SELECT id, filename, size_bytes, content_type, stored_path, created_at, status FROM documents WHERE id = ?",
+            (document_id,),
+        ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return row
+
+
+def process_document(document_id: str, file_path: Path) -> list[FactResponse]:
+    if file_path.suffix.lower() != ".pdf":
+        raise HTTPException(status_code=415, detail="Only PDF documents can be processed")
+
+    try:
+        facts = extract_facts(file_path, document_id)
+    except Exception as error:
+        with get_connection() as connection:
+            connection.execute(
+                "UPDATE documents SET status = 'extraction_failed' WHERE id = ?",
+                (document_id,),
+            )
+            connection.commit()
+        raise HTTPException(status_code=422, detail="The PDF could not be processed") from error
+
+    with get_connection() as connection:
+        connection.execute("DELETE FROM facts WHERE document_id = ?", (document_id,))
+        connection.executemany(
+            "INSERT INTO facts (id, document_id, claim, source_page, source_text, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            [
+                (fact.id, fact.document_id, fact.claim, fact.source_page, fact.source_text, fact.created_at)
+                for fact in facts
+            ],
+        )
+        connection.execute(
+            "UPDATE documents SET status = 'processed' WHERE id = ?",
+            (document_id,),
+        )
+        connection.commit()
+    return facts
+
+
 @app.post("/documents", response_model=DocumentResponse)
 async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
     if not file.filename:
         raise HTTPException(status_code=400, detail="A file is required")
+
+    if not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
+        raise HTTPException(status_code=415, detail="Only PDF documents are supported")
 
     safe_name = file.filename.replace("/", "_")
     document_id = str(uuid.uuid4())
     file_path = UPLOADS_DIR / f"{document_id}_{safe_name}"
 
     content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="The PDF exceeds the 10 MB upload limit")
     file_path.write_bytes(content)
 
     created_at = datetime.now(timezone.utc).isoformat()
     status = "uploaded"
-    facts: list[FactResponse] = []
-    if file_path.suffix.lower() == ".pdf":
-        try:
-            facts = extract_facts(file_path, document_id)
-            status = "processed"
-        except Exception:
-            status = "extraction_failed"
 
     with get_connection() as connection:
         connection.execute(
@@ -173,17 +227,19 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
                 status,
             ),
         )
-        connection.executemany(
-            """
-            INSERT INTO facts (id, document_id, claim, source_page, source_text, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            [
-                (fact.id, fact.document_id, fact.claim, fact.source_page, fact.source_text, fact.created_at)
-                for fact in facts
-            ],
-        )
         connection.commit()
+
+    try:
+        process_document(document_id, file_path)
+        status = "processed"
+    except HTTPException:
+        status = "extraction_failed"
+        with get_connection() as connection:
+            connection.execute(
+                "UPDATE documents SET status = ? WHERE id = ?",
+                (status, document_id),
+            )
+            connection.commit()
 
     return DocumentResponse(
         id=document_id,
@@ -203,18 +259,30 @@ def list_documents() -> list[DocumentResponse]:
             "SELECT id, filename, size_bytes, content_type, stored_path, created_at, status FROM documents ORDER BY created_at DESC"
         ).fetchall()
 
-    return [
-        DocumentResponse(
-            id=row["id"],
-            filename=row["filename"],
-            size_bytes=row["size_bytes"],
-            content_type=row["content_type"],
-            stored_path=row["stored_path"],
-            created_at=row["created_at"],
-            status=row["status"],
-        )
-        for row in rows
-    ]
+    return [document_from_row(row) for row in rows]
+
+
+@app.get("/documents/{document_id}", response_model=DocumentResponse)
+def get_document(document_id: str) -> DocumentResponse:
+    return document_from_row(get_document_row(document_id))
+
+
+@app.post("/documents/{document_id}/process", response_model=DocumentResponse)
+def reprocess_document(document_id: str) -> DocumentResponse:
+    row = get_document_row(document_id)
+    process_document(document_id, Path(row["stored_path"]))
+    return document_from_row(get_document_row(document_id))
+
+
+@app.delete("/documents/{document_id}", status_code=204)
+def delete_document(document_id: str) -> None:
+    row = get_document_row(document_id)
+    with get_connection() as connection:
+        connection.execute("DELETE FROM facts WHERE document_id = ?", (document_id,))
+        connection.execute("DELETE FROM documents WHERE id = ?", (document_id,))
+        connection.commit()
+
+    Path(row["stored_path"]).unlink(missing_ok=True)
 
 
 @app.get("/facts", response_model=list[FactResponse])

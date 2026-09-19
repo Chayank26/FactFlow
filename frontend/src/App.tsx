@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ChangeEvent } from 'react'
-import { ArrowRight, ArrowUpRight, Check, ChevronRight, FileText, Files, GitCompareArrows, Layers3, Link2, Search, Sparkles, Upload, Waypoints } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Check, ChevronRight, FileText, Files, GitCompareArrows, Layers3, Link2, RefreshCw, Search, Sparkles, Trash2, Upload, Waypoints, X } from 'lucide-react'
 import BackendStatus from './BackendStatus'
 
 type View = 'documents' | 'facts' | 'comparisons'
@@ -27,6 +27,14 @@ type ComparisonRecord = {
   right_claim: string
   right_page: number
   right_source_text: string
+}
+type FactRecord = {
+  id: string
+  document_id: string
+  claim: string
+  source_page: number
+  source_text: string
+  created_at: string
 }
 
 const sections = {
@@ -62,6 +70,10 @@ export default function App() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [comparisons, setComparisons] = useState<ComparisonRecord[]>([])
   const [loadingComparisons, setLoadingComparisons] = useState(false)
+  const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null)
+  const [selectedFacts, setSelectedFacts] = useState<FactRecord[]>([])
+  const [loadingDetails, setLoadingDetails] = useState(false)
+  const [managementError, setManagementError] = useState<string | null>(null)
 
   useEffect(() => {
     const onHashChange = () => setView(readView())
@@ -143,6 +155,52 @@ export default function App() {
     }
   }
 
+  const openDocument = async (document: DocumentRecord) => {
+    setSelectedDocument(document)
+    setSelectedFacts([])
+    setManagementError(null)
+    setLoadingDetails(true)
+    try {
+      const [detailResponse, factsResponse] = await Promise.all([
+        fetch(`${apiBase}/documents/${document.id}`),
+        fetch(`${apiBase}/facts?document_id=${encodeURIComponent(document.id)}`),
+      ])
+      if (!detailResponse.ok || !factsResponse.ok) throw new Error('Could not load document details')
+      setSelectedDocument(await detailResponse.json() as DocumentRecord)
+      setSelectedFacts(await factsResponse.json() as FactRecord[])
+    } catch {
+      setManagementError('Document details could not be loaded.')
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
+  const reprocessDocument = async (document: DocumentRecord) => {
+    setManagementError(null)
+    try {
+      const response = await fetch(`${apiBase}/documents/${document.id}/process`, { method: 'POST' })
+      if (!response.ok) throw new Error('Could not reprocess document')
+      const updated = await response.json() as DocumentRecord
+      setDocuments(current => current.map(item => item.id === updated.id ? updated : item))
+      if (selectedDocument?.id === updated.id) await openDocument(updated)
+    } catch {
+      setManagementError('The document could not be reprocessed.')
+    }
+  }
+
+  const deleteDocument = async (document: DocumentRecord) => {
+    if (!window.confirm(`Delete ${document.filename}? Its extracted facts will also be removed.`)) return
+    setManagementError(null)
+    try {
+      const response = await fetch(`${apiBase}/documents/${document.id}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Could not delete document')
+      setDocuments(current => current.filter(item => item.id !== document.id))
+      if (selectedDocument?.id === document.id) setSelectedDocument(null)
+    } catch {
+      setManagementError('The document could not be deleted.')
+    }
+  }
+
   const section = sections[view]
   const EmptyIcon = section.icon
 
@@ -213,10 +271,28 @@ export default function App() {
                           <span>{formatDate(document.created_at)}</span>
                         </div>
                       </div>
+                      <div className="document-actions">
+                        <button className="icon-action" onClick={() => void openDocument(document)} title={`View ${document.filename}`} aria-label={`View ${document.filename}`}><Search size={15} /></button>
+                        <button className="icon-action" onClick={() => void reprocessDocument(document)} title={`Reprocess ${document.filename}`} aria-label={`Reprocess ${document.filename}`}><RefreshCw size={15} /></button>
+                        <button className="icon-action danger" onClick={() => void deleteDocument(document)} title={`Delete ${document.filename}`} aria-label={`Delete ${document.filename}`}><Trash2 size={15} /></button>
+                      </div>
                     </article>
                   ))}
                 </div>
               )}
+              {managementError && <div className="error-text management-error">{managementError}</div>}
+              {selectedDocument && <section className="document-detail" aria-labelledby="document-detail-title">
+                <div className="detail-heading">
+                  <div><span className="eyebrow">DOCUMENT DETAIL</span><h3 id="document-detail-title">{selectedDocument.filename}</h3></div>
+                  <button className="icon-action" onClick={() => setSelectedDocument(null)} title="Close document detail" aria-label="Close document detail"><X size={16} /></button>
+                </div>
+                {loadingDetails ? <div className="document-loading">Loading evidence…</div> : <>
+                  <div className="detail-meta"><span>{formatBytes(selectedDocument.size_bytes)}</span><span>{selectedDocument.status}</span><span>{formatDate(selectedDocument.created_at)}</span></div>
+                  {selectedFacts.length === 0 ? <p className="detail-empty">No extracted facts are stored for this document.</p> : <div className="fact-list">
+                    {selectedFacts.map(fact => <article className="fact-row" key={fact.id}><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span></article>)}
+                  </div>}
+                </>}
+              </section>}
             </div>
           ) : view === 'comparisons' ? (
             <div className="comparison-panel">

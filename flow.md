@@ -1,6 +1,14 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 1 complete (phases 1–5). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 Phase 2 — Document management
+
+**User journey:** upload a PDF → see it in Documents → open its detail view to inspect extracted evidence → reprocess it when needed → delete it with confirmation. Invalid non-PDF uploads are rejected before storage, and files larger than 10 MB are rejected at the API boundary.
+
+**Data flow:** browser action → document detail, process, or delete endpoint → SQLite/document file update → refreshed React state. Delete removes facts first, then the document row and stored file, preventing orphaned evidence. Reprocess clears previous facts, extracts the current PDF again, and updates the document status.
+
+**Current state:** the browser keeps the selected document and its facts in memory. The backend remains the source of truth. Part 3 Phase 1 fact-browser work is still planned rather than inferred from this phase.
 
 ## Part 2 planning checkpoint
 

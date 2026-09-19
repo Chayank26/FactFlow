@@ -1,6 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 1 complete (phases 1–5). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 Phase 2 — Document management
+
+**Server-side validation:** the upload endpoint now requires a PDF filename and `application/pdf` content type, and enforces a 10 MB limit. Client-side `accept` hints can improve the picker experience, but they are not a security boundary, so validation remains in FastAPI.
+
+**Explicit cleanup:** deletion removes facts, the document row, and the stored file in one application workflow. The database currently uses explicit dependent-row cleanup rather than relying on a migration to alter the existing facts foreign key.
+
+**Reprocessing:** extraction is shared by initial upload and the process endpoint. Reprocessing replaces the document’s prior facts, which avoids duplicate evidence while keeping the document ID stable for future links.
+
+**Verification:** 5 focused backend tests and the frontend production build pass. The suite emits existing Starlette/httpx deprecation warnings, but no test failures.
 
 ## Part 2 planning checkpoint
 
