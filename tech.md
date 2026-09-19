@@ -1,6 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 6 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 3 Phase 6 — Polish and documentation
+
+**README as operational documentation:** the setup and verification guide now describes the actual current system rather than the original shell milestone. It includes backend tests, frontend build verification, API URLs, and the main manual workflow.
+
+**Runtime-data hygiene:** backend/data is ignored because SQLite and uploaded files are local runtime state. This prevents test fixtures and personal source documents from entering commits while leaving the data directory available during development.
+
+**Native PDF hint:** the file input uses `accept="application/pdf,.pdf"` to improve picker guidance. Server-side validation remains authoritative, so this browser hint does not replace the API boundary.
+
+**Verification:** the complete backend suite passes with 11 tests and the frontend production build passes. No new runtime dependency was introduced.
 
 ## Part 3 Phase 5 — Reliability and regression coverage
 

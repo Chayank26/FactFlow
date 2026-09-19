@@ -1,6 +1,6 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 6 complete. Current local ports: frontend 5179, API 8019.
 
 ## Part 3 progress checkpoint
 
@@ -29,6 +29,12 @@ Verification: the full focused backend suite passes with 7 tests and the fronten
 Enabled SQLite foreign-key enforcement for every database connection and added explicit regression coverage for missing-document operations, malformed PDFs, oversized uploads, and orphaned facts. The browser now reports document and comparison loading failures instead of silently rendering empty states, and aborted navigation requests do not create false errors.
 
 Verification: the full focused backend suite passes with 11 tests and the frontend production build passes. The phase is paused for review.
+
+## Part 3 Phase 6 — Polish and documentation
+
+Updated the README to describe the implemented upload, extraction, document-management, and comparison workflows; added the complete backend test command and current verification guidance. Added backend/data to Git ignore rules so local SQLite and uploaded runtime files are not staged accidentally. The browser file pickers now advertise PDF-only input.
+
+Verification: all 11 backend tests pass and the frontend production build passes. The phase is paused for review. Part 3 Phase 1, the dedicated fact-browser view, remains planned and is not being marked complete by this documentation phase.
 
 ## Part 2 planning checkpoint
 

@@ -254,7 +254,7 @@ export default function App() {
               <div className="documents-actions">
                 <label className="upload-button upload-button-live" aria-label="Upload a document">
                   <Upload size={16} /> Upload PDF
-                  <input type="file" onChange={handleUpload} hidden />
+                  <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} hidden />
                 </label>
                 {uploading && <span className="empty-hint">Uploading…</span>}
                 {uploadError && <span className="error-text">{uploadError}</span>}
@@ -271,7 +271,7 @@ export default function App() {
                   <p>{section.emptyText}</p>
                   <label className="upload-button upload-button-live" aria-label="Upload your first document">
                     <Upload size={16} /> Upload PDF
-                    <input type="file" onChange={handleUpload} hidden />
+                    <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} hidden />
                   </label>
                 </div>
               ) : (

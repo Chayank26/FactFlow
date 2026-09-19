@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 1 (phases 1–5) is complete.** Currently supports a responsive application shell, Documents/Facts/Comparisons navigation, and a real backend health check with retry. PDF upload, storage, extraction, and comparison are upcoming; dashes in the cards mean data is not available yet.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 2 is complete and Part 3 is in progress.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, and filtered cross-document comparisons. OCR for image-only PDFs and the fact-browser view remain planned.
 
 ## Run locally
 
@@ -32,13 +32,16 @@ The dedicated ports avoid another project running on 5173. Strict port mode make
 ## Verify
 
 ```sh
-cd frontend
+cd /Users/chayankbhargava/Projects/FactFlow/backend
+.venv/bin/python -m pytest -q tests
+
+cd ../frontend
 npm run build
 ```
 
-Then open the website with the backend running. Check the connected indicator, each navigation item, browser Back and refresh. Stop the backend and refresh to see the offline message; restart it and select Retry connection.
+Then open the website with both servers running. Upload a PDF, inspect its extracted facts, reprocess or delete it, and open Comparisons to filter relationships by source and type. Check the connected indicator, each navigation item, browser Back and refresh. Stop the backend and refresh to see the offline message; restart it and select Retry connection.
 
-Verified in headless Chrome: live health/CORS, three views, disabled upload, Back/refresh, mobile navigation and no horizontal overflow at 390px, failed-request recovery, and no browser exceptions. Desktop/mobile screenshots were reviewed. This is a smoke check, not a full accessibility audit. No document processing tests exist because processing is not implemented yet.
+The backend suite covers upload, PDF extraction, evidence references, document lifecycle, comparison filters, and failure paths. The frontend build is a compile-time check; browser interaction coverage remains a future improvement. This is not a full accessibility audit.
 
 ## Learning logs
 
@@ -54,7 +57,8 @@ AGENTS.md requires updates to all three files after every completed phase. Earli
 frontend/src/App.tsx           Navigation and page shell
 frontend/src/BackendStatus.tsx Health request, timeout, and retry
 frontend/src/index.css         Responsive visual styling
-backend/app/main.py            FastAPI health route and local CORS
+backend/app/main.py            FastAPI API, SQLite storage, extraction, and comparisons
+backend/tests/                  Focused backend regression tests
 ```
 
-Original reference PDFs and ZIP remain untouched and are ignored by Git. No database, model service, or credentials are needed for Part 1.
+Original reference PDFs and ZIP remain untouched and are ignored by Git. Runtime SQLite data and uploaded files live under backend/data and are ignored by Git. No model service or credentials are needed for local development.
