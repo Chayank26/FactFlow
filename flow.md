@@ -29,6 +29,14 @@ Each phase will update the learning logs and pause for review before the next im
 
 **Storage:** the browser does not store document bytes. It sends them to FastAPI, which writes the file and returns metadata. The browser only keeps the current list in memory and reloads it when the Documents view mounts.
 
+## Phase 8 — PDF extraction and evidence-backed facts
+
+**User journey:** upload a PDF → the backend stores the source file → pypdf reads each page → each non-empty extracted line becomes a fact linked to the uploaded document → the document reports `processed` or `extraction_failed`. A facts client can request all stored facts or filter them by document ID.
+
+**Data flow:** multipart upload → document file on disk → `PdfReader` page text extraction → normalized non-empty lines → SQLite facts rows containing `document_id`, `claim`, `source_page`, and `source_text` → `GET /facts` response. The source text is retained alongside the claim so later UI work can show where each fact came from instead of presenting unsupported summaries.
+
+**Storage:** facts are local SQLite records with a foreign-key relationship to documents. Extraction is intentionally deterministic and does not call an LLM; this keeps the evidence boundary inspectable while the data model is being proven. Frontend fact rendering and comparison behavior remain planned work.
+
 ## Phase 1 — Project foundation
 User flow: no website runs yet; the developer opens the frontend and backend folders.
 Data flow: reference PDFs remain local files. There is no browser request, server, database, or document processing yet.

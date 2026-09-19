@@ -33,6 +33,16 @@ This staged sequence keeps each change testable and leaves room for a later swit
 
 **Verification:** the frontend production build passes after correcting the new type-only React import. No PDF extraction library was added in this phase; the next phase will introduce it only alongside evidence storage.
 
+## Phase 8 — PDF extraction and evidence-backed facts
+
+**pypdf:** a focused, local PDF parser is sufficient for text-based reference PDFs and avoids adding a model or external service before the evidence schema is established. Scanned PDFs will need OCR in a later phase because text extraction alone cannot recover image-only text.
+
+**Line-based fact records:** the first extractor preserves each non-empty PDF text line as a fact and uses the page number plus source text as its evidence reference. This is deliberately conservative: it avoids inventing claims or silently discarding provenance while giving the next UI phase concrete records to display. More semantic claim segmentation can be introduced after real documents reveal its requirements.
+
+**SQLite relationship:** facts store the parent document ID rather than duplicating document metadata. The API supports an optional document filter so the frontend can load a focused evidence set without adding a separate query layer.
+
+**Verification:** the focused backend suite passes with 2 tests. It covers document upload/list behavior and a real generated PDF upload through extraction, persistence, and filtered retrieval. The lock file records the installed pypdf version for repeatable setup.
+
 ## Phase 1 — Project foundation
 **One Git repository with frontend/ and backend/:** one history keeps application changes and learning notes together. Separate repositories would add coordination overhead for this solo practice project. A monorepo orchestrator would add machinery before we have shared packages or complex build dependencies.
 **Git:** local checkpoints make each phase inspectable and reversible. Manual folder backups do not provide useful diffs or coherent history. No hosted service is required to run locally.

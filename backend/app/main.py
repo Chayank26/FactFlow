@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from pypdf import PdfReader
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -28,6 +29,19 @@ def init_db() -> None:
                 stored_path TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'uploaded'
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS facts (
+                id TEXT PRIMARY KEY,
+                document_id TEXT NOT NULL,
+                claim TEXT NOT NULL,
+                source_page INTEGER NOT NULL,
+                source_text TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (document_id) REFERENCES documents (id)
             )
             """
         )
@@ -66,9 +80,43 @@ class DocumentResponse(BaseModel):
     status: str
 
 
+class FactResponse(BaseModel):
+    id: str
+    document_id: str
+    claim: str
+    source_page: int
+    source_text: str
+    created_at: str
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(status="ok", service="fact-layer-api")
+
+
+def extract_facts(file_path: Path, document_id: str) -> list[FactResponse]:
+    reader = PdfReader(str(file_path))
+    extracted: list[FactResponse] = []
+    created_at = datetime.now(timezone.utc).isoformat()
+
+    for page_number, page in enumerate(reader.pages, start=1):
+        text = page.extract_text() or ""
+        for line in text.splitlines():
+            claim = " ".join(line.split())
+            if not claim:
+                continue
+            extracted.append(
+                FactResponse(
+                    id=str(uuid.uuid4()),
+                    document_id=document_id,
+                    claim=claim,
+                    source_page=page_number,
+                    source_text=claim,
+                    created_at=created_at,
+                )
+            )
+
+    return extracted
 
 
 @app.post("/documents", response_model=DocumentResponse)
@@ -84,11 +132,20 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
     file_path.write_bytes(content)
 
     created_at = datetime.now(timezone.utc).isoformat()
+    status = "uploaded"
+    facts: list[FactResponse] = []
+    if file_path.suffix.lower() == ".pdf":
+        try:
+            facts = extract_facts(file_path, document_id)
+            status = "processed"
+        except Exception:
+            status = "extraction_failed"
+
     with get_connection() as connection:
         connection.execute(
             """
             INSERT INTO documents (id, filename, size_bytes, content_type, stored_path, created_at, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'uploaded')
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 document_id,
@@ -97,7 +154,18 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
                 file.content_type,
                 str(file_path),
                 created_at,
+                status,
             ),
+        )
+        connection.executemany(
+            """
+            INSERT INTO facts (id, document_id, claim, source_page, source_text, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (fact.id, fact.document_id, fact.claim, fact.source_page, fact.source_text, fact.created_at)
+                for fact in facts
+            ],
         )
         connection.commit()
 
@@ -108,7 +176,7 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
         content_type=file.content_type,
         stored_path=str(file_path),
         created_at=created_at,
-        status="uploaded",
+        status=status,
     )
 
 
@@ -128,6 +196,31 @@ def list_documents() -> list[DocumentResponse]:
             stored_path=row["stored_path"],
             created_at=row["created_at"],
             status=row["status"],
+        )
+        for row in rows
+    ]
+
+
+@app.get("/facts", response_model=list[FactResponse])
+def list_facts(document_id: str | None = None) -> list[FactResponse]:
+    query = "SELECT id, document_id, claim, source_page, source_text, created_at FROM facts"
+    parameters: tuple[str, ...] = ()
+    if document_id:
+        query += " WHERE document_id = ?"
+        parameters = (document_id,)
+    query += " ORDER BY created_at DESC, source_page ASC"
+
+    with get_connection() as connection:
+        rows = connection.execute(query, parameters).fetchall()
+
+    return [
+        FactResponse(
+            id=row["id"],
+            document_id=row["document_id"],
+            claim=row["claim"],
+            source_page=row["source_page"],
+            source_text=row["source_text"],
+            created_at=row["created_at"],
         )
         for row in rows
     ]
