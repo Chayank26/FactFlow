@@ -14,6 +14,7 @@ DATA_DIR = BASE_DIR / "data"
 UPLOADS_DIR = DATA_DIR / "uploads"
 DB_PATH = DATA_DIR / "factlayer.db"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_FILENAME_LENGTH = 120
 SCHEMA_VERSION = 1
 
 
@@ -218,6 +219,15 @@ def process_document(document_id: str, file_path: Path) -> list[FactResponse]:
     return facts
 
 
+def safe_filename(filename: str) -> str:
+    name = filename.replace("\\", "/").rsplit("/", 1)[-1].strip()
+    if not name or name in {".", ".."}:
+        raise HTTPException(status_code=400, detail="A valid filename is required")
+    if len(name) > MAX_FILENAME_LENGTH:
+        raise HTTPException(status_code=400, detail="The filename is too long")
+    return name
+
+
 @app.post("/documents", response_model=DocumentResponse)
 async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
     if not file.filename:
@@ -226,7 +236,7 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
     if not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
         raise HTTPException(status_code=415, detail="Only PDF documents are supported")
 
-    safe_name = file.filename.replace("/", "_")
+    safe_name = safe_filename(file.filename)
     document_id = str(uuid.uuid4())
     file_path = UPLOADS_DIR / f"{document_id}_{safe_name}"
 

@@ -1,6 +1,14 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 1 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 2 — Upload and API security hardening
+
+**User journey:** choose a PDF → the API validates its extension and MIME type → strips any path components from the submitted filename → rejects names over 120 characters or files over 10 MB → stores the source under the controlled upload directory. Malformed but correctly identified PDFs are retained as `extraction_failed` so the user can inspect or reprocess them.
+
+**Data flow:** multipart upload → filename/content validation → bounded file read → safe basename → file and metadata persistence. Rejected inputs do not create document records or stored files.
+
+**Current state:** filename traversal and excessive-name cases are covered by tests. Browser picker hints remain helpful but server validation is authoritative.
 
 ## Part 4 Phase 1 — Database and migration hardening
 

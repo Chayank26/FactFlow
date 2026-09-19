@@ -1,6 +1,12 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 1 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 2 — Upload and API security hardening
+
+Hardened upload filenames by stripping Unix and Windows path components, rejecting empty or overlong names, and preserving only the controlled basename under the upload directory. Existing PDF content-type, extension, and 10 MB size validation remain active. Added focused security regression tests while preserving malformed-PDF retention for later reprocessing.
+
+Verification: the full backend suite passes with 16 tests and the frontend production build passes. True PDF signature inspection and rate limiting remain future security work.
 
 ## Part 4 Phase 1 — Database and migration hardening
 

@@ -1,6 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 1 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 2 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 2 — Upload and API security hardening
+
+**Basename sanitization:** replacing backslashes before splitting on `/` handles both common path separator styles. The stored name is limited to the final component and a bounded length, preventing submitted paths from influencing file placement.
+
+**Validation layering:** extension and declared MIME type are checked before persistence, while the existing parser determines whether a correctly identified PDF is processable. This preserves useful `extraction_failed` records without treating the client-declared MIME type as proof of valid PDF bytes.
+
+**Deferred security work:** byte-signature validation, rate limiting, authentication, and deployment-level request limits are not introduced in this local single-user phase.
+
+**Verification:** 16 backend tests and the frontend production build pass. Existing Starlette/httpx deprecation warnings remain non-blocking.
 
 ## Part 4 Phase 1 — Database and migration hardening
 
