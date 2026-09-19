@@ -1,6 +1,6 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 6 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 1 complete; Phases 2–6 also complete. Current local ports: frontend 5179, API 8019.
 
 ## Part 3 Phase 6 — Polish and documentation
 
@@ -11,6 +11,16 @@ Updated after every completed phase. Current milestone: Part 3 Phase 6 complete.
 **Native PDF hint:** the file input uses `accept="application/pdf,.pdf"` to improve picker guidance. Server-side validation remains authoritative, so this browser hint does not replace the API boundary.
 
 **Verification:** the complete backend suite passes with 11 tests and the frontend production build passes. No new runtime dependency was introduced.
+
+## Part 3 Phase 1 — Dedicated facts browser
+
+**Shared endpoint contract:** the browser reuses `GET /facts` and its existing optional document filter rather than creating a second facts API. This keeps source selection authoritative on the server and avoids duplicating document relationships in the client.
+
+**Local search:** claim and source-text search happens in the browser because the current fact set is small and the interaction should feel immediate. Full-text indexing belongs in a later scale-focused phase.
+
+**Evidence presentation:** each card keeps the extracted claim paired with its page number and source text, preserving the evidence-first design established in Part 2.
+
+**Verification:** all 11 backend tests and the frontend production build pass. No new dependency was needed.
 
 ## Part 3 Phase 5 — Reliability and regression coverage
 

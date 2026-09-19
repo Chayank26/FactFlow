@@ -73,6 +73,11 @@ export default function App() {
   const [comparisons, setComparisons] = useState<ComparisonRecord[]>([])
   const [loadingComparisons, setLoadingComparisons] = useState(false)
   const [comparisonsError, setComparisonsError] = useState<string | null>(null)
+  const [facts, setFacts] = useState<FactRecord[]>([])
+  const [loadingFacts, setLoadingFacts] = useState(false)
+  const [factsError, setFactsError] = useState<string | null>(null)
+  const [factDocumentId, setFactDocumentId] = useState('')
+  const [factSearch, setFactSearch] = useState('')
   const [comparisonDocumentId, setComparisonDocumentId] = useState('')
   const [comparisonRelationship, setComparisonRelationship] = useState<RelationshipFilter>('')
   const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null)
@@ -87,7 +92,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (view !== 'documents' && view !== 'comparisons') return
+    if (view !== 'documents' && view !== 'facts' && view !== 'comparisons') return
 
     const controller = new AbortController()
     setLoadingDocuments(true)
@@ -110,6 +115,32 @@ export default function App() {
 
     return () => controller.abort()
   }, [view])
+
+  useEffect(() => {
+    if (view !== 'facts') return
+
+    const controller = new AbortController()
+    setLoadingFacts(true)
+    setFactsError(null)
+    const params = factDocumentId ? `?document_id=${encodeURIComponent(factDocumentId)}` : ''
+    void fetch(`${apiBase}/facts${params}`, { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('Could not load facts')
+        const data = await response.json() as FactRecord[]
+        setFacts(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setFacts([])
+          setFactsError('Facts could not be loaded. Check the backend connection and try again.')
+        }
+      })
+      .finally(() => {
+        setLoadingFacts(false)
+      })
+
+    return () => controller.abort()
+  }, [view, factDocumentId])
 
   useEffect(() => {
     if (view !== 'comparisons') return
@@ -244,7 +275,7 @@ export default function App() {
         <section className="intro-card" aria-labelledby="intro-title"><div className="intro-copy"><span className="intro-label"><Sparkles size={14} /> CONNECT THE DOTS</span><h2 id="intro-title">From scattered pages<br />to a clearer picture.</h2><p>Bring your sources together. Discover the facts.<br className="desktop-break" /> Understand the story between them.</p><a href="#comparisons" className="intro-link">Explore comparisons <ArrowRight size={16} /></a></div><div className="source-art" aria-hidden="true"><div className="art-orbit" /><div className="art-line line-one" /><div className="art-line line-two" /><div className="art-paper paper-one"><FileText size={24} /><i /><i /><i /></div><div className="art-center"><Waypoints size={32} /></div><div className="art-paper paper-two"><span className="art-check"><Check size={17} /></span><i /><i /><i /></div><span className="art-spark spark-one" /><span className="art-spark spark-two" /></div></section>
 
         <div className="stats-grid">
-          {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description:'Grounded in evidence',icon:Search},{key:'comparisons',label:'Comparisons',description:'Connections across sources',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? documents.length : '—'}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
+          {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description:'Grounded in evidence',icon:Search},{key:'comparisons',label:'Comparisons',description:'Connections across sources',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? documents.length : item.key === 'facts' ? facts.length : comparisons.length || '—'}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
         </div>
 
         <section className="collection" aria-labelledby="collection-title"><div className="collection-heading"><div><h2 id="collection-title">{view === 'documents' ? 'Your documents' : view === 'facts' ? 'Your facts' : 'Your comparisons'}</h2><span>{view === 'documents' ? 'A home for your source material' : 'Your knowledge will take shape here'}</span></div><span className="coming-label">{view === 'documents' ? 'Live data' : 'Coming soon'}</span></div>
@@ -312,6 +343,40 @@ export default function App() {
                   </div>}
                 </>}
               </section>}
+            </div>
+          ) : view === 'facts' ? (
+            <div className="facts-panel">
+              <div className="fact-filters" aria-label="Fact filters">
+                <label>Source
+                  <select value={factDocumentId} onChange={event => setFactDocumentId(event.target.value)}>
+                    <option value="">All documents</option>
+                    {documents.map(document => <option key={document.id} value={document.id}>{document.filename}</option>)}
+                  </select>
+                </label>
+                <label className="fact-search-label">Search
+                  <input value={factSearch} onChange={event => setFactSearch(event.target.value)} placeholder="Search claims or evidence" />
+                </label>
+              </div>
+              {loadingFacts ? (
+                <div className="document-loading">Loading facts…</div>
+              ) : factsError ? (
+                <div className="error-panel" role="alert">{factsError}</div>
+              ) : (() => {
+                const query = factSearch.trim().toLowerCase()
+                const visibleFacts = facts.filter(fact => !query || `${fact.claim} ${fact.source_text}`.toLowerCase().includes(query))
+                return visibleFacts.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon"><EmptyIcon size={27} strokeWidth={1.4} /></div>
+                    <h3>{factSearch ? 'No matching facts.' : section.emptyTitle}</h3>
+                    <p>{factSearch ? 'Try a different search or clear the filters.' : section.emptyText}</p>
+                    {!factSearch && <a className="back-link" href="#documents">Go to documents <ArrowRight size={16} /></a>}
+                  </div>
+                ) : (
+                  <div className="fact-browser-list">
+                    {visibleFacts.map(fact => <article className="fact-browser-card" key={fact.id}><div className="fact-browser-icon"><Search size={16} /></div><div><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span></div></article>)}
+                  </div>
+                )
+              })()}
             </div>
           ) : view === 'comparisons' ? (
             <div className="comparison-panel">

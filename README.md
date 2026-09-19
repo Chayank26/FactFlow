@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 2 is complete and Part 3 is in progress.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, and filtered cross-document comparisons. OCR for image-only PDFs and the fact-browser view remain planned.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 2 is complete and Part 3 is in progress.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned.
 
 ## Run locally
 
@@ -39,7 +39,7 @@ cd ../frontend
 npm run build
 ```
 
-Then open the website with both servers running. Upload a PDF, inspect its extracted facts, reprocess or delete it, and open Comparisons to filter relationships by source and type. Check the connected indicator, each navigation item, browser Back and refresh. Stop the backend and refresh to see the offline message; restart it and select Retry connection.
+Then open the website with both servers running. Upload a PDF, search and filter its extracted facts, inspect a document’s evidence, reprocess or delete it, and open Comparisons to filter relationships by source and type. Check the connected indicator, each navigation item, browser Back and refresh. Stop the backend and refresh to see the offline message; restart it and select Retry connection.
 
 The backend suite covers upload, PDF extraction, evidence references, document lifecycle, comparison filters, and failure paths. The frontend build is a compile-time check; browser interaction coverage remains a future improvement. This is not a full accessibility audit.
 

@@ -1,6 +1,6 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 3 Phase 6 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 3 Phase 1 complete; Phases 2–6 also complete. Current local ports: frontend 5179, API 8019.
 
 ## Part 3 progress checkpoint
 
@@ -35,6 +35,12 @@ Verification: the full focused backend suite passes with 11 tests and the fronte
 Updated the README to describe the implemented upload, extraction, document-management, and comparison workflows; added the complete backend test command and current verification guidance. Added backend/data to Git ignore rules so local SQLite and uploaded runtime files are not staged accidentally. The browser file pickers now advertise PDF-only input.
 
 Verification: all 11 backend tests pass and the frontend production build passes. The phase is paused for review. Part 3 Phase 1, the dedicated fact-browser view, remains planned and is not being marked complete by this documentation phase.
+
+## Part 3 Phase 1 — Dedicated facts browser
+
+Completed the deferred Facts view with API-backed loading, document filtering, claim/evidence search, page references, source passages, loading and failure states, and a live fact count in the dashboard. This closes the remaining Part 3 Phase 1 gap identified during the later phases.
+
+Verification: all 11 backend tests pass and the frontend production build passes. The full Part 3 feature set is now represented in the browser; OCR for image-only PDFs remains the main extraction limitation.
 
 ## Part 2 planning checkpoint
 
