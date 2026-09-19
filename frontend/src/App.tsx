@@ -37,6 +37,12 @@ type FactRecord = {
   source_text: string
   created_at: string
 }
+type FactPage = {
+  items: FactRecord[]
+  total: number
+  limit: number
+  offset: number
+}
 
 const sections = {
   documents: { title: 'Documents', subtitle: 'The starting point for everything you know.', icon: Files, emptyTitle: 'Good knowledge starts with a source.', emptyText: 'Your documents will live here. Soon, you’ll be able to upload PDFs and turn scattered information into traceable facts.' },
@@ -78,6 +84,9 @@ export default function App() {
   const [factsError, setFactsError] = useState<string | null>(null)
   const [factDocumentId, setFactDocumentId] = useState('')
   const [factSearch, setFactSearch] = useState('')
+  const [factOffset, setFactOffset] = useState(0)
+  const [factTotal, setFactTotal] = useState(0)
+  const factLimit = 20
   const [comparisonDocumentId, setComparisonDocumentId] = useState('')
   const [comparisonRelationship, setComparisonRelationship] = useState<RelationshipFilter>('')
   const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null)
@@ -122,12 +131,15 @@ export default function App() {
     const controller = new AbortController()
     setLoadingFacts(true)
     setFactsError(null)
-    const params = factDocumentId ? `?document_id=${encodeURIComponent(factDocumentId)}` : ''
-    void fetch(`${apiBase}/facts${params}`, { signal: controller.signal })
+    const params = new URLSearchParams({ limit: String(factLimit), offset: String(factOffset) })
+    if (factDocumentId) params.set('document_id', factDocumentId)
+    if (factSearch.trim()) params.set('search', factSearch.trim())
+    void fetch(`${apiBase}/facts?${params.toString()}`, { signal: controller.signal })
       .then(async response => {
         if (!response.ok) throw new Error('Could not load facts')
-        const data = await response.json() as FactRecord[]
-        setFacts(Array.isArray(data) ? data : [])
+        const data = await response.json() as FactPage
+        setFacts(Array.isArray(data.items) ? data.items : [])
+        setFactTotal(typeof data.total === 'number' ? data.total : 0)
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -140,7 +152,7 @@ export default function App() {
       })
 
     return () => controller.abort()
-  }, [view, factDocumentId])
+  }, [view, factDocumentId, factSearch, factOffset])
 
   useEffect(() => {
     if (view !== 'comparisons') return
@@ -275,7 +287,7 @@ export default function App() {
         <section className="intro-card" aria-labelledby="intro-title"><div className="intro-copy"><span className="intro-label"><Sparkles size={14} /> CONNECT THE DOTS</span><h2 id="intro-title">From scattered pages<br />to a clearer picture.</h2><p>Bring your sources together. Discover the facts.<br className="desktop-break" /> Understand the story between them.</p><a href="#comparisons" className="intro-link">Explore comparisons <ArrowRight size={16} /></a></div><div className="source-art" aria-hidden="true"><div className="art-orbit" /><div className="art-line line-one" /><div className="art-line line-two" /><div className="art-paper paper-one"><FileText size={24} /><i /><i /><i /></div><div className="art-center"><Waypoints size={32} /></div><div className="art-paper paper-two"><span className="art-check"><Check size={17} /></span><i /><i /><i /></div><span className="art-spark spark-one" /><span className="art-spark spark-two" /></div></section>
 
         <div className="stats-grid">
-          {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description:'Grounded in evidence',icon:Search},{key:'comparisons',label:'Comparisons',description:'Connections across sources',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? documents.length : item.key === 'facts' ? facts.length : comparisons.length || '—'}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
+          {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description:'Grounded in evidence',icon:Search},{key:'comparisons',label:'Comparisons',description:'Connections across sources',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? documents.length : item.key === 'facts' ? factTotal : comparisons.length || '—'}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
         </div>
 
         <section className="collection" aria-labelledby="collection-title"><div className="collection-heading"><div><h2 id="collection-title">{view === 'documents' ? 'Your documents' : view === 'facts' ? 'Your facts' : 'Your comparisons'}</h2><span>{view === 'documents' ? 'A home for your source material' : 'Your knowledge will take shape here'}</span></div><span className="coming-label">{view === 'documents' ? 'Live data' : 'Coming soon'}</span></div>
@@ -348,13 +360,13 @@ export default function App() {
             <div className="facts-panel">
               <div className="fact-filters" aria-label="Fact filters">
                 <label>Source
-                  <select value={factDocumentId} onChange={event => setFactDocumentId(event.target.value)}>
+                  <select value={factDocumentId} onChange={event => { setFactDocumentId(event.target.value); setFactOffset(0) }}>
                     <option value="">All documents</option>
                     {documents.map(document => <option key={document.id} value={document.id}>{document.filename}</option>)}
                   </select>
                 </label>
                 <label className="fact-search-label">Search
-                  <input value={factSearch} onChange={event => setFactSearch(event.target.value)} placeholder="Search claims or evidence" />
+                  <input value={factSearch} onChange={event => { setFactSearch(event.target.value); setFactOffset(0) }} placeholder="Search claims or evidence" />
                 </label>
               </div>
               {loadingFacts ? (
@@ -362,18 +374,17 @@ export default function App() {
               ) : factsError ? (
                 <div className="error-panel" role="alert">{factsError}</div>
               ) : (() => {
-                const query = factSearch.trim().toLowerCase()
-                const visibleFacts = facts.filter(fact => !query || `${fact.claim} ${fact.source_text}`.toLowerCase().includes(query))
-                return visibleFacts.length === 0 ? (
+                return facts.length === 0 ? (
                   <div className="empty-state">
                     <div className="empty-icon"><EmptyIcon size={27} strokeWidth={1.4} /></div>
-                    <h3>{factSearch ? 'No matching facts.' : section.emptyTitle}</h3>
-                    <p>{factSearch ? 'Try a different search or clear the filters.' : section.emptyText}</p>
-                    {!factSearch && <a className="back-link" href="#documents">Go to documents <ArrowRight size={16} /></a>}
+                    <h3>{factSearch || factDocumentId ? 'No matching facts.' : section.emptyTitle}</h3>
+                    <p>{factSearch || factDocumentId ? 'Try a different search or clear the filters.' : section.emptyText}</p>
+                    {!factSearch && !factDocumentId && <a className="back-link" href="#documents">Go to documents <ArrowRight size={16} /></a>}
                   </div>
                 ) : (
                   <div className="fact-browser-list">
-                    {visibleFacts.map(fact => <article className="fact-browser-card" key={fact.id}><div className="fact-browser-icon"><Search size={16} /></div><div><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span></div></article>)}
+                    {facts.map(fact => <article className="fact-browser-card" key={fact.id}><div className="fact-browser-icon"><Search size={16} /></div><div><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span></div></article>)}
+                    <div className="fact-pagination"><span>Showing {factOffset + 1}–{Math.min(factOffset + facts.length, factTotal)} of {factTotal}</span><div><button disabled={factOffset === 0} onClick={() => setFactOffset(offset => Math.max(0, offset - factLimit))}>Previous</button><button disabled={factOffset + factLimit >= factTotal} onClick={() => setFactOffset(offset => offset + factLimit)}>Next</button></div></div>
                   </div>
                 )
               })()}

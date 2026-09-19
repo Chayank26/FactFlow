@@ -44,7 +44,7 @@ def test_pdf_upload_extracts_facts_with_source_reference():
     facts_response = client.get("/facts", params={"document_id": document["id"]})
 
     assert facts_response.status_code == 200, facts_response.text
-    facts = facts_response.json()
+    facts = facts_response.json()["items"]
     assert len(facts) == 1
     assert facts[0]["document_id"] == document["id"]
     assert facts[0]["source_page"] == 1

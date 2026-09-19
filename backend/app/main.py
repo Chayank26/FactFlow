@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pypdf import PdfReader
@@ -99,6 +99,13 @@ class FactResponse(BaseModel):
     source_page: int
     source_text: str
     created_at: str
+
+
+class FactPageResponse(BaseModel):
+    items: list[FactResponse]
+    total: int
+    limit: int
+    offset: int
 
 
 class ComparisonResponse(BaseModel):
@@ -324,29 +331,50 @@ def delete_document(document_id: str) -> None:
     Path(row["stored_path"]).unlink(missing_ok=True)
 
 
-@app.get("/facts", response_model=list[FactResponse])
-def list_facts(document_id: str | None = None) -> list[FactResponse]:
-    query = "SELECT id, document_id, claim, source_page, source_text, created_at FROM facts"
-    parameters: tuple[str, ...] = ()
+@app.get("/facts", response_model=FactPageResponse)
+def list_facts(
+    document_id: str | None = None,
+    search: str | None = None,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> FactPageResponse:
+    conditions: list[str] = []
+    parameters: list[str | int] = []
     if document_id:
-        query += " WHERE document_id = ?"
-        parameters = (document_id,)
-    query += " ORDER BY created_at DESC, source_page ASC"
+        conditions.append("document_id = ?")
+        parameters.append(document_id)
+    if search and search.strip():
+        conditions.append("(LOWER(claim) LIKE ? OR LOWER(source_text) LIKE ?)")
+        search_value = f"%{search.strip().lower()}%"
+        parameters.extend([search_value, search_value])
+
+    where_clause = f" WHERE {' AND '.join(conditions)}" if conditions else ""
+    count_query = f"SELECT COUNT(*) FROM facts{where_clause}"
+    query = (
+        "SELECT id, document_id, claim, source_page, source_text, created_at "
+        f"FROM facts{where_clause} ORDER BY created_at DESC, source_page ASC LIMIT ? OFFSET ?"
+    )
 
     with get_connection() as connection:
-        rows = connection.execute(query, parameters).fetchall()
+        total = connection.execute(count_query, parameters).fetchone()[0]
+        rows = connection.execute(query, [*parameters, limit, offset]).fetchall()
 
-    return [
-        FactResponse(
-            id=row["id"],
-            document_id=row["document_id"],
-            claim=row["claim"],
-            source_page=row["source_page"],
-            source_text=row["source_text"],
-            created_at=row["created_at"],
-        )
-        for row in rows
-    ]
+    return FactPageResponse(
+        items=[
+            FactResponse(
+                id=row["id"],
+                document_id=row["document_id"],
+                claim=row["claim"],
+                source_page=row["source_page"],
+                source_text=row["source_text"],
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 def claim_tokens(claim: str) -> set[str]:

@@ -30,7 +30,7 @@ def test_document_detail_reprocess_and_delete():
     delete_response = client.delete(f"/documents/{document_id}")
     assert delete_response.status_code == 204
     assert client.get(f"/documents/{document_id}").status_code == 404
-    assert client.get("/facts", params={"document_id": document_id}).json() == []
+    assert client.get("/facts", params={"document_id": document_id}).json()["items"] == []
 
 
 def test_upload_validation_rejects_non_pdf_files():

@@ -1,6 +1,12 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 4 — Search and pagination
+
+Moved Facts search into the API and added validated limit/offset pagination with total-count metadata. The Facts browser now requests server-filtered pages by document and search text, displays the total count, and provides previous/next controls. Updated tests to scope generated-data searches to their own document so local runtime data cannot make assertions nondeterministic.
+
+Verification: the full backend suite passes with 19 tests and the frontend production build passes.
 
 ## Part 4 Phase 3 — Extraction pipeline hardening
 

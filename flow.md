@@ -1,6 +1,14 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 4 — Search and pagination
+
+**User journey:** open Facts → choose a source or enter a search term → the browser requests a bounded result page → inspect matching evidence → move to the next or previous page. The dashboard count uses the server total rather than the current page size.
+
+**Data flow:** filter/search controls → `GET /facts` query parameters → SQL conditions and count query → paginated fact items plus total metadata → React state → evidence cards and page controls. Search covers both claim and retained source text.
+
+**Current state:** fact retrieval is bounded to 20 browser items per request, with an API maximum of 100. Search is server-side; no full-text index has been introduced yet.
 
 ## Part 4 Phase 3 — Extraction pipeline hardening
 

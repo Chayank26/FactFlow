@@ -1,6 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 3 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 4 — Search and pagination
+
+**Bounded API response:** the Facts endpoint validates `limit` from 1 to 100 and `offset` from zero, returning an envelope with items, total, limit, and offset. This keeps the browser payload bounded and leaves room for a future full-text index.
+
+**SQL search:** the current implementation uses case-insensitive `LIKE` conditions over claim and source text. This is adequate for the local dataset and avoids introducing a search engine before usage patterns justify one.
+
+**Deterministic tests:** because the ignored SQLite database persists across test runs, generated-data tests scope queries by their newly created document ID. This prevents unrelated local fixtures from changing expected totals.
+
+**Verification:** 19 backend tests and the frontend production build pass. Existing Starlette/httpx deprecation warnings remain non-blocking.
 
 ## Part 4 Phase 3 — Extraction pipeline hardening
 

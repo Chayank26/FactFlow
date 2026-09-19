@@ -15,4 +15,4 @@ def test_pdf_without_extractable_text_has_explicit_status():
     assert response.status_code == 200, response.text
     document = response.json()
     assert document["status"] == "extraction_failed"
-    assert client.get("/facts", params={"document_id": document["id"]}).json() == []
+    assert client.get("/facts", params={"document_id": document["id"]}).json()["items"] == []
