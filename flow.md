@@ -1,6 +1,18 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 6 complete. Current local ports: frontend 5179, API 8019.
+
+
+
+## Part 4 Phase 6 — Complete evidence pagination
+
+**User journey:** Documents → open a document → view up to 20 facts with page/source text → use Previous/Next to reach all evidence, with a visible range and total. Opening another document starts at its first page. A failed evidence request shows an error with Retry evidence rather than an empty result. Reprocessing refreshes the selected document and moves back to a valid page if fewer facts remain.
+
+**Data flow:** selected document + offset → GET /facts with document_id, limit=20, and offset → SQLite results ordered by creation time, source page, then unique fact ID → page envelope → evidence rows, total, and navigation controls. Switching/closing documents or leaving Documents cancels the prior detail request. Facts search/filter pagination retains its existing flow and now recovers when an offset exceeds the current total.
+
+**Current state:** upload, deterministic extraction, document management, paginated document evidence, searchable paginated Facts, and filtered heuristic comparisons work. Fixed-data fact pages now have deterministic ordering; concurrent changes can still shift offset-based page boundaries. IDs are regenerated during reprocessing, so order within a source page is not promised across reprocessing. Phase 7 comparison improvements, Phase 8 repeatable browser checks/polish, Phase 9 documentation reconciliation, and future OCR remain planned.
+
+**Verification:** 22 backend tests, frontend build, and a temporary browser check pass. Real API coverage verifies complete 65-fact traversal; controlled browser responses verify navigation, errors/retry, source switching, and reprocessing recovery.
 
 
 ## Part 4 Phase 5 — Isolated backend test storage

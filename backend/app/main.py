@@ -353,7 +353,7 @@ def list_facts(
     count_query = f"SELECT COUNT(*) FROM facts{where_clause}"
     query = (
         "SELECT id, document_id, claim, source_page, source_text, created_at "
-        f"FROM facts{where_clause} ORDER BY created_at DESC, source_page ASC LIMIT ? OFFSET ?"
+        f"FROM facts{where_clause} ORDER BY created_at DESC, source_page ASC, id ASC LIMIT ? OFFSET ?"
     )
 
     with get_connection() as connection:

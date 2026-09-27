@@ -92,6 +92,9 @@ export default function App() {
   const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null)
   const [selectedFacts, setSelectedFacts] = useState<FactRecord[]>([])
   const [loadingDetails, setLoadingDetails] = useState(false)
+  const [detailOffset, setDetailOffset] = useState(0)
+  const [detailTotal, setDetailTotal] = useState(0)
+  const [detailsError, setDetailsError] = useState<string | null>(null)
   const [managementError, setManagementError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -138,6 +141,11 @@ export default function App() {
       .then(async response => {
         if (!response.ok) throw new Error('Could not load facts')
         const data = await response.json() as FactPage
+        if (controller.signal.aborted) return
+        if (factOffset > 0 && factOffset >= data.total) {
+          setFactOffset(Math.max(0, Math.floor((data.total - 1) / factLimit) * factLimit))
+          return
+        }
         setFacts(Array.isArray(data.items) ? data.items : [])
         setFactTotal(typeof data.total === 'number' ? data.total : 0)
       })
@@ -148,7 +156,7 @@ export default function App() {
         }
       })
       .finally(() => {
-        setLoadingFacts(false)
+        if (!controller.signal.aborted) setLoadingFacts(false)
       })
 
     return () => controller.abort()
@@ -215,25 +223,46 @@ export default function App() {
     }
   }
 
-  const openDocument = async (document: DocumentRecord) => {
+  const openDocument = (document: DocumentRecord) => {
     setSelectedDocument(document)
+    setDetailOffset(0)
     setSelectedFacts([])
-    setManagementError(null)
+    setDetailTotal(0)
+    setDetailsError(null)
     setLoadingDetails(true)
-    try {
-      const [detailResponse, factsResponse] = await Promise.all([
-        fetch(`${apiBase}/documents/${document.id}`),
-        fetch(`${apiBase}/facts?document_id=${encodeURIComponent(document.id)}`),
-      ])
-      if (!detailResponse.ok || !factsResponse.ok) throw new Error('Could not load document details')
-      setSelectedDocument(await detailResponse.json() as DocumentRecord)
-      setSelectedFacts(await factsResponse.json() as FactRecord[])
-    } catch {
-      setManagementError('Document details could not be loaded.')
-    } finally {
-      setLoadingDetails(false)
-    }
+    setManagementError(null)
   }
+
+  useEffect(() => {
+    if (view !== 'documents' || !selectedDocument) return
+    const controller = new AbortController()
+    setLoadingDetails(true)
+    setDetailsError(null)
+    const params = new URLSearchParams({
+      document_id: selectedDocument.id,
+      limit: String(factLimit),
+      offset: String(detailOffset),
+    })
+    void fetch(`${apiBase}/facts?${params}`, { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('Could not load document evidence')
+        const page = await response.json() as FactPage
+        if (controller.signal.aborted) return
+        if (detailOffset > 0 && detailOffset >= page.total) {
+          setDetailOffset(Math.max(0, Math.floor((page.total - 1) / factLimit) * factLimit))
+          return
+        }
+        setSelectedFacts(page.items)
+        setDetailTotal(page.total)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setDetailsError('Document evidence could not be loaded. Try again.')
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoadingDetails(false)
+      })
+    return () => controller.abort()
+  }, [view, selectedDocument, detailOffset])
 
   const reprocessDocument = async (document: DocumentRecord) => {
     setManagementError(null)
@@ -242,7 +271,7 @@ export default function App() {
       if (!response.ok) throw new Error('Could not reprocess document')
       const updated = await response.json() as DocumentRecord
       setDocuments(current => current.map(item => item.id === updated.id ? updated : item))
-      if (selectedDocument?.id === updated.id) await openDocument(updated)
+      setSelectedDocument(current => current?.id === updated.id ? updated : current)
     } catch {
       setManagementError('The document could not be reprocessed.')
     }
@@ -255,7 +284,7 @@ export default function App() {
       const response = await fetch(`${apiBase}/documents/${document.id}`, { method: 'DELETE' })
       if (!response.ok) throw new Error('Could not delete document')
       setDocuments(current => current.filter(item => item.id !== document.id))
-      if (selectedDocument?.id === document.id) setSelectedDocument(null)
+      setSelectedDocument(current => current?.id === document.id ? null : current)
     } catch {
       setManagementError('The document could not be deleted.')
     }
@@ -348,11 +377,12 @@ export default function App() {
                   <div><span className="eyebrow">DOCUMENT DETAIL</span><h3 id="document-detail-title">{selectedDocument.filename}</h3></div>
                   <button className="icon-action" onClick={() => setSelectedDocument(null)} title="Close document detail" aria-label="Close document detail"><X size={16} /></button>
                 </div>
-                {loadingDetails ? <div className="document-loading">Loading evidence…</div> : <>
+                {loadingDetails ? <div className="document-loading">Loading evidence…</div> : detailsError ? <div className="error-panel" role="alert">{detailsError} <button onClick={() => setSelectedDocument(current => current ? { ...current } : null)}>Retry evidence</button></div> : <>
                   <div className="detail-meta"><span>{formatBytes(selectedDocument.size_bytes)}</span><span>{selectedDocument.status}</span><span>{formatDate(selectedDocument.created_at)}</span></div>
                   {selectedFacts.length === 0 ? <p className="detail-empty">No extracted facts are stored for this document.</p> : <div className="fact-list">
                     {selectedFacts.map(fact => <article className="fact-row" key={fact.id}><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span></article>)}
                   </div>}
+                  {detailTotal > 0 && <nav className="fact-pagination" aria-label="Document evidence pages"><span>Showing {detailOffset + 1}–{detailOffset + selectedFacts.length} of {detailTotal}</span><div><button disabled={detailOffset === 0} onClick={() => setDetailOffset(offset => Math.max(0, offset - factLimit))}>Previous</button><button disabled={detailOffset + factLimit >= detailTotal} onClick={() => setDetailOffset(offset => offset + factLimit)}>Next</button></div></nav>}
                 </>}
               </section>}
             </div>

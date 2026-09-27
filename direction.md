@@ -1,6 +1,20 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 6 complete. Current local ports: frontend 5179, API 8019.
+
+
+
+## Part 4 Phase 6 — Complete evidence pagination
+
+Fixed the document-detail integration left behind when Phase 4 changed GET /facts from an array to a page envelope. Details now read items and total, request 20 facts at a time, and provide Previous/Next controls and a visible range. This phase comes after test isolation so regression runs safely exercise documents with many claims.
+
+Evidence requests cancel when the user switches or closes documents or navigates away. Failed requests display a dedicated error and retry button. Opening a document resets the offset; reprocessing refreshes its evidence and clamps an offset that exceeds the new total. The Facts browser also recovers from an out-of-range offset and ignores canceled results. Fact ordering now uses ID as the final tie-breaker after creation time and source page.
+
+Verification: all 22 backend tests pass, including a real 65-claim PDF traversed across four pages with tied timestamps/pages, deliberately reversed insertion order, repeated requests, and an empty beyond-end page. Frontend production build and git diff --check pass. A temporary Playwright/installed Chrome check passes for four evidence pages, boundary controls, previous navigation, switching documents, error/retry, reprocess shrink recovery, and closing details; no browser exceptions. Browser checks used mocked API responses; pytest covered the real API and storage. Existing dependency deprecation warnings remain.
+
+Suggested commit message: `fix: complete document evidence pagination and stabilize fact ordering`
+
+Phase 7 remains planned; this checkpoint does not implement comparison changes. No git commit was created.
 
 
 ## Part 4 roadmap after Phase 4
@@ -8,7 +22,7 @@ Updated after every completed phase. Current milestone: Part 4 Phase 5 complete.
 Continue in small, reviewable phases. After each checkpoint passes, update direction.md, flow.md, and tech.md and provide a change summary and suggested git commit message. Later phases below remain planned, not completed.
 
 - **Phase 5 — Isolate backend tests (complete):** prevent regression runs from writing to local application data. Checkpoint: full backend suite, frontend build, and unchanged runtime files.
-- **Phase 6 — Finish pagination integration (planned):** make every document-detail fact accessible, add deterministic fact ordering, and verify navigation beyond the first result page.
+- **Phase 6 — Finish pagination integration (complete):** make every document-detail fact accessible, add deterministic fact ordering, and verify navigation beyond the first result page.
 - **Phase 7 — Improve comparison reliability (planned):** cover misleading token matches with regression examples and align classification and UI wording with what the heuristic can establish.
 - **Phase 8 — Browser workflow checks and polish (planned):** add repeatable browser checks for upload, evidence browsing, pagination, reprocess/delete, filters, and errors; remove obsolete future-feature labels.
 - **Phase 9 — Documentation reconciliation (planned):** synchronize operational guidance and current-state descriptions with verified behavior and record the next milestone. OCR remains future work with its own processor and dependency decisions.

@@ -1,6 +1,20 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 6 complete. Current local ports: frontend 5179, API 8019.
+
+
+
+## Part 4 Phase 6 — Complete evidence pagination
+
+**Retained application tools:** React state/effects, fetch with AbortController, the existing FastAPI page envelope, SQLite, and pytest were sufficient. No new runtime dependency or schema migration was needed. Document details reuse the existing fact-pagination CSS and API rather than loading every fact into browser memory.
+
+**Stable ordering:** added the unique fact ID as the last SQL sort key after created_at DESC and source_page ASC. This resolves ties common to extraction batches without changing the schema. ID ordering is deterministic for existing records, not semantic sentence order, and reprocessing generates new IDs. Cursor/snapshot pagination could address concurrent dataset changes but would add an API contract change beyond this local phase; offset pages can still shift when data changes.
+
+**Request lifecycle:** effect cleanup cancels obsolete detail requests; aborted results and finalizers cannot overwrite the active request state. A separate evidence error state keeps failures distinct from empty documents and supports retry. Both evidence and Facts offsets clamp to the last valid page when results shrink.
+
+**Verification tool:** temporarily installed Playwright under /tmp and used installed Chrome for a targeted browser smoke check. This adds no project dependency or lockfile change. Controlled API responses make page navigation, failure/retry, and reprocessing shrink behavior deterministic; real extraction/storage is exercised separately by pytest. A committed repeatable browser suite remains Phase 8 work.
+
+**Verification:** 22 backend tests pass, frontend production build passes, and browser checks pass without exceptions. The 65-fact backend test explicitly reverses insertion order to verify the tie-breaker rather than relying on SQLite's incidental row order. Existing dependency deprecation warnings remain.
 
 
 ## Part 4 Phase 5 — Isolated backend test storage
