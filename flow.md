@@ -1,7 +1,16 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 6 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 7 complete. Current local ports: frontend 5179, API 8019.
 
+## Part 4 Phase 7 — Comparison reliability and wording
+
+**User journey:** upload/manage PDFs → browse paginated document evidence or search Facts → open Comparisons → filter by source and Matching wording/Possible difference → inspect both document names, claims, pages, and source passages. An explanation states that text matching does not verify truth or establish contradictions; no-match results suggest adjusting filters or adding documents.
+
+**Data flow:** GET /comparisons retains optional document_id and agreement/difference parameters → read facts in deterministic order → exclude same-document pairs → normalize wording conservatively for agreement → otherwise require at least two shared terms after removing common connecting words, plus 50% overlap → return both evidence contexts and cautious summaries. Browser labels translate the existing API values without changing filter contracts. Comparisons remain computed per request, not persisted.
+
+**Current state:** Phase 7 is complete alongside upload, extraction, document management, and paginated facts/evidence. Matching wording is textual equality under limited normalization, not independent corroboration. Possible differences can still reflect unrelated contexts or paraphrases; semantic equivalence and contradictions are not resolved. Phase 8 repeatable browser checks/polish, Phase 9 documentation reconciliation, and future OCR remain planned.
+
+**Verification:** 33 backend tests and frontend build pass; regression cases cover misleading matches and evidence/filter preservation.
 
 
 ## Part 4 Phase 6 — Complete evidence pagination

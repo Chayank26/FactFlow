@@ -1,7 +1,18 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 6 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 7 complete. Current local ports: frontend 5179, API 8019.
 
+## Part 4 Phase 7 — Comparison reliability and wording
+
+Replaced token-set equality as the agreement rule: reordered or repeated words can change a claim, even when its token set stays identical. Agreement now requires equal wording after case/whitespace normalization and removal of final sentence punctuation. Internal numbers, units, signs, word order, and repetition remain significant. Nonmatching wording requires at least two shared non-connecting terms and 50% token overlap to become a possible difference. Added a deterministic fact-ID tie-breaker to comparison ordering.
+
+The comparison view now labels results Matching wording and Possible difference, explains the text-matching boundary, and gives accurate no-match guidance. API relationship values remain agreement/difference for compatibility. This phase follows complete pagination so users can inspect the evidence behind these tentative relationships.
+
+Verification: all 33 backend tests and the frontend production build pass. Eleven new API regression cases exercise case/spacing normalization, reordered words, negation, quantities, units, signed values, repeated words, connecting-word-only overlap, unrelated claims, and same-document exclusion. Matching cases also verify evidence linkage, both relationship filters, source filtering, and repeat request stability. git diff --check passes. Existing dependency deprecation warnings remain; no new browser interaction suite was added in this phase.
+
+Suggested commit message: `fix: make comparison matching conservative and clarify result labels`
+
+Phase 8 browser checks and polish remain planned. No git commit was created.
 
 
 ## Part 4 Phase 6 — Complete evidence pagination
@@ -23,7 +34,7 @@ Continue in small, reviewable phases. After each checkpoint passes, update direc
 
 - **Phase 5 — Isolate backend tests (complete):** prevent regression runs from writing to local application data. Checkpoint: full backend suite, frontend build, and unchanged runtime files.
 - **Phase 6 — Finish pagination integration (complete):** make every document-detail fact accessible, add deterministic fact ordering, and verify navigation beyond the first result page.
-- **Phase 7 — Improve comparison reliability (planned):** cover misleading token matches with regression examples and align classification and UI wording with what the heuristic can establish.
+- **Phase 7 — Improve comparison reliability (complete):** cover misleading token matches with regression examples and align classification and UI wording with what the heuristic can establish.
 - **Phase 8 — Browser workflow checks and polish (planned):** add repeatable browser checks for upload, evidence browsing, pagination, reprocess/delete, filters, and errors; remove obsolete future-feature labels.
 - **Phase 9 — Documentation reconciliation (planned):** synchronize operational guidance and current-state descriptions with verified behavior and record the next milestone. OCR remains future work with its own processor and dependency decisions.
 

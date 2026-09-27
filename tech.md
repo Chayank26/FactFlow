@@ -1,7 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 6 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 7 complete. Current local ports: frontend 5179, API 8019.
 
+## Part 4 Phase 7 — Comparison reliability and wording
+
+**No new tool or dependency was needed.** Retained Python string/regex operations, SQLite, FastAPI, React, and pytest. Agreement compares case-folded, whitespace-normalized strings with final sentence punctuation removed, preserving internal symbols, word order, and repetition. This replaces set equality, which cannot distinguish reversed subjects/objects or repeated words.
+
+**Candidate matching trade-off:** a small English connecting-word exclusion set reduces generic-word matches. Different wording must share at least two remaining tokens and meet the existing 0.5 overlap threshold. Regex tokens support Unicode words; numbers participate in candidate matching, while their exact formatting/signs remain significant for agreement. This is a conservative heuristic, not semantic analysis: it can miss paraphrases and short related claims or still match unrelated contexts. The thresholds are not an evaluated accuracy guarantee, and the exclusion list is not multilingual language processing. Embeddings or an LLM would require a separate evaluation dataset, provenance decisions, and dependency/cost assessment.
+
+**Compatibility and presentation:** API values remain agreement/difference; user-facing labels are Matching wording/Possible difference. Summaries explain the matching basis without claiming verified truth or contradiction. A unique fact-ID ordering tie-breaker makes pair orientation stable for unchanged records; reprocessing still replaces fact IDs. Comparisons still use quadratic pair enumeration and remain unpaginated; this phase makes no scale claim.
+
+**Verification:** 33 backend tests pass, including 11 new parameterized/API cases, and the frontend build passes. Tests exercise real PDF upload/extraction and comparison responses with per-test temporary storage. UI changes are text-only and compile-checked; repeatable browser coverage remains Phase 8. Existing dependency deprecation warnings remain.
 
 
 ## Part 4 Phase 6 — Complete evidence pagination

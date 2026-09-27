@@ -379,7 +379,14 @@ def list_facts(
 
 
 def claim_tokens(claim: str) -> set[str]:
-    return {token.strip(".,:;!?()[]{}").lower() for token in claim.split() if token.strip(".,:;!?()[]{}")}
+    # Connecting words alone are not evidence that two claims share a subject.
+    stop_words = {"a", "an", "the", "and", "or", "of", "to", "in", "on", "at", "by", "for", "from", "with", "is", "are", "was", "were", "be", "been", "it", "this", "that"}
+    return set(re.findall(r"\w+", claim.casefold())) - stop_words
+
+
+def normalized_claim(claim: str) -> str:
+    # Preserve word order, repeated words, numbers, units, and internal symbols.
+    return " ".join(claim.casefold().split()).rstrip(".!?")
 
 
 @app.get("/comparisons", response_model=list[ComparisonResponse])
@@ -397,7 +404,7 @@ def list_comparisons(
                    documents.filename AS document_name
             FROM facts
             JOIN documents ON documents.id = facts.document_id
-            ORDER BY facts.created_at DESC, facts.source_page ASC
+            ORDER BY facts.created_at DESC, facts.source_page ASC, facts.id ASC
             """
         ).fetchall()
 
@@ -417,12 +424,12 @@ def list_comparisons(
                 continue
             shared_tokens = left_tokens & right_tokens
             similarity = len(shared_tokens) / max(len(left_tokens), len(right_tokens))
-            if similarity == 1:
+            if normalized_claim(left["claim"]) == normalized_claim(right["claim"]):
                 relationship_type = "agreement"
-                summary = "Both sources make the same claim."
-            elif similarity >= 0.5:
+                summary = "Matching wording after normalizing case, spacing, and final sentence punctuation; not independent verification."
+            elif len(shared_tokens) >= 2 and similarity >= 0.5:
                 relationship_type = "difference"
-                summary = "The sources discuss the same subject with different details."
+                summary = "Shared terms with different wording. Review both passages; this may not be a contradiction."
             else:
                 continue
             if relationship and relationship != relationship_type:

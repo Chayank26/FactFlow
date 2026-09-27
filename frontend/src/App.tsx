@@ -47,7 +47,7 @@ type FactPage = {
 const sections = {
   documents: { title: 'Documents', subtitle: 'The starting point for everything you know.', icon: Files, emptyTitle: 'Good knowledge starts with a source.', emptyText: 'Your documents will live here. Soon, you’ll be able to upload PDFs and turn scattered information into traceable facts.' },
   facts: { title: 'Facts', subtitle: 'Every claim, connected to its evidence.', icon: Search, emptyTitle: 'A place for the details that matter.', emptyText: 'Extracted facts will appear here with their values, context, and source passages. Add and process documents once PDF upload is available.' },
-  comparisons: { title: 'Comparisons', subtitle: 'See where your sources agree — and why they differ.', icon: GitCompareArrows, emptyTitle: 'Find the context between the claims.', emptyText: 'Compare facts side by side to explore agreement, possible contradictions, and differences explained by context.' },
+  comparisons: { title: 'Comparisons', subtitle: 'Explore matching wording and possible differences across sources.', icon: GitCompareArrows, emptyTitle: 'Find the context between the claims.', emptyText: 'No matching claim pairs were found for this selection. Try other filters or add documents to compare.' },
 }
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8019').replace(/\/$/, '')
@@ -421,6 +421,7 @@ export default function App() {
             </div>
           ) : view === 'comparisons' ? (
             <div className="comparison-panel">
+              <p className="detail-empty">Comparisons use text matching, not fact verification. Matching wording does not prove a claim is true; a possible difference may reflect context or phrasing. Review both sources.</p>
               <div className="comparison-filters" aria-label="Comparison filters">
                 <label>Source
                   <select value={comparisonDocumentId} onChange={event => setComparisonDocumentId(event.target.value)}>
@@ -431,8 +432,8 @@ export default function App() {
                 <label>Relationship
                   <select value={comparisonRelationship} onChange={event => setComparisonRelationship(event.target.value as RelationshipFilter)}>
                     <option value="">All relationships</option>
-                    <option value="agreement">Agreement</option>
-                    <option value="difference">Difference</option>
+                    <option value="agreement">Matching wording</option>
+                    <option value="difference">Possible difference</option>
                   </select>
                 </label>
               </div>
@@ -452,7 +453,7 @@ export default function App() {
                   {comparisons.map(comparison => (
                     <article key={comparison.id} className="comparison-card">
                       <div className="comparison-card-header">
-                        <span className={`relationship-label ${comparison.relationship}`}>{comparison.relationship}</span>
+                        <span className={`relationship-label ${comparison.relationship}`}>{comparison.relationship === 'agreement' ? 'Matching wording' : 'Possible difference'}</span>
                         <span className="comparison-summary">{comparison.summary}</span>
                       </div>
                       <div className="comparison-sources">
