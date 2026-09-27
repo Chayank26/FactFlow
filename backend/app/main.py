@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import re
 import uuid
@@ -10,7 +11,7 @@ from pydantic import BaseModel
 from pypdf import PdfReader
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = Path(os.environ.get("FACTFLOW_DATA_DIR", str(BASE_DIR / "data"))).resolve()
 UPLOADS_DIR = DATA_DIR / "uploads"
 DB_PATH = DATA_DIR / "factlayer.db"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024

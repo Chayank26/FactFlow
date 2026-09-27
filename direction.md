@@ -1,6 +1,26 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+
+
+## Part 4 roadmap after Phase 4
+
+Continue in small, reviewable phases. After each checkpoint passes, update direction.md, flow.md, and tech.md and provide a change summary and suggested git commit message. Later phases below remain planned, not completed.
+
+- **Phase 5 — Isolate backend tests (complete):** prevent regression runs from writing to local application data. Checkpoint: full backend suite, frontend build, and unchanged runtime files.
+- **Phase 6 — Finish pagination integration (planned):** make every document-detail fact accessible, add deterministic fact ordering, and verify navigation beyond the first result page.
+- **Phase 7 — Improve comparison reliability (planned):** cover misleading token matches with regression examples and align classification and UI wording with what the heuristic can establish.
+- **Phase 8 — Browser workflow checks and polish (planned):** add repeatable browser checks for upload, evidence browsing, pagination, reprocess/delete, filters, and errors; remove obsolete future-feature labels.
+- **Phase 9 — Documentation reconciliation (planned):** synchronize operational guidance and current-state descriptions with verified behavior and record the next milestone. OCR remains future work with its own processor and dependency decisions.
+
+## Part 4 Phase 5 — Isolated backend test storage
+
+The existing suite initialized and wrote to the local application database, so test safety comes before further feature work. Added a configurable FACTFLOW_DATA_DIR with the existing backend/data default. Pytest redirects import-time initialization to temporary storage, then supplies a fresh database and upload directory for each test. Updated the schema check to read the active database path and added two independent upload checks proving fresh state and temporary file storage.
+
+Verification: all 21 backend tests pass; the frontend production build passes. Compared SHA-256 hashes and file inventories before and after the suite: all 116 existing runtime files remained unchanged, with no additions or removals. Two existing dependency deprecation warnings remain. No git commit was created.
+
+Suggested commit message: `test: isolate backend database and uploads per test`
+
 
 ## Part 4 Phase 4 — Search and pagination
 

@@ -1,6 +1,18 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+
+
+## Part 4 Phase 5 — Isolated backend test storage
+
+**Current user journey:** upload and manage local PDFs → inspect source-backed facts → search/filter paginated Facts → inspect filtered cross-document comparisons. Application storage still defaults to backend/data, with frontend port 5179 and API port 8019. No browser behavior changed in this phase.
+
+**Developer/test flow:** pytest loads conftest before test modules → FACTFLOW_DATA_DIR redirects application import-time initialization into a temporary directory → each test receives a separate temporary SQLite database and uploads directory → real API upload/extraction/query operations run against that test's storage. Temporary collection storage is cleaned up at pytest shutdown; per-test directories use pytest's standard temporary-directory retention policy.
+
+**Verification:** 21 backend tests and the frontend build pass. The local runtime file inventory and all 116 content hashes were unchanged after the suite.
+
+**Working versus planned:** test isolation is complete. Phase 6 will finish document-detail pagination and stable fact ordering; Phase 7 will improve comparison reliability; Phase 8 will add browser workflow checks and polish; Phase 9 will reconcile documentation. OCR remains future work. Earlier phase entries describe historical behavior, including formerly planned features that are now implemented.
+
 
 ## Part 4 Phase 4 — Search and pagination
 

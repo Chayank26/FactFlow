@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 2 is complete and Part 3 is in progress.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 4 Phase 5 is complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. The remaining phased roadmap is recorded in direction.md.
 
 ## Run locally
 
@@ -41,11 +41,11 @@ npm run build
 
 Then open the website with both servers running. Upload a PDF, search and filter its extracted facts, inspect a document’s evidence, reprocess or delete it, and open Comparisons to filter relationships by source and type. Check the connected indicator, each navigation item, browser Back and refresh. Stop the backend and refresh to see the offline message; restart it and select Retry connection.
 
-The backend suite covers upload, PDF extraction, evidence references, document lifecycle, comparison filters, and failure paths. The frontend build is a compile-time check; browser interaction coverage remains a future improvement. This is not a full accessibility audit.
+The backend suite covers upload, PDF extraction, evidence references, document lifecycle, comparison filters, and failure paths. Each test uses a fresh temporary database and upload directory; test collection also initializes storage outside the local app data directory. Running tests does not populate or modify your local document collection. The frontend build is a compile-time check; browser interaction coverage remains a future improvement. This is not a full accessibility audit.
 
 ## Local database maintenance
 
-The development database is `backend/data/factlayer.db` and is intentionally ignored by Git. Back it up before manual experiments:
+The development database defaults to `backend/data/factlayer.db` and is intentionally ignored by Git. Set `FACTFLOW_DATA_DIR` before starting the backend to use an alternative storage directory; it will contain `factlayer.db` and `uploads/`. The commands below assume the default location. Back it up before manual experiments:
 
 ```sh
 cp backend/data/factlayer.db /tmp/factlayer-backup.db

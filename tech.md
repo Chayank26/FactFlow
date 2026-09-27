@@ -1,6 +1,20 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 4 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 5 complete. Current local ports: frontend 5179, API 8019.
+
+
+## Part 4 Phase 5 — Isolated backend test storage
+
+**No new tool or dependency was needed.** Retained pytest, FastAPI TestClient, SQLite, and the Python standard library. The autouse pytest fixture uses tmp_path and monkeypatch to create fresh storage for every test, including existing tests without changing each call site.
+
+**Import-time isolation:** app.main currently initializes SQLite when imported. A fixture alone would run too late to prevent that initialization from touching local data, so conftest sets FACTFLOW_DATA_DIR to a TemporaryDirectory before collection imports the app. The backend reads that optional setting and retains backend/data as the default. The prior environment value is restored at pytest shutdown.
+
+**Trade-offs:** real temporary SQLite files exercise actual schema, foreign keys, uploads, and extraction more faithfully than database mocks or a shared in-memory connection. An application factory or lifespan-based initialization could eliminate import-time side effects more broadly, but would expand this phase unnecessarily. Tests reference the module's current DB_PATH rather than a copied path that would outlive monkeypatch changes. Pytest may retain recent per-test temporary directories for debugging; these are outside local application storage.
+
+**Verification:** 21 backend tests pass, including two independent fresh-state upload cases. Frontend production build passes. All 116 local runtime file hashes and the inventory remained unchanged. Existing Starlette/httpx and AnyIO deprecation warnings remain non-blocking.
+
+**Next decisions (planned):** reuse the current API and React stack for Phase 6 pagination; evaluate comparison behavior against examples in Phase 7; select browser-check tooling in Phase 8. OCR tooling is deferred to a separate milestone.
+
 
 ## Part 4 Phase 4 — Search and pagination
 
