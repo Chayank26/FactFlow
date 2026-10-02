@@ -1,6 +1,19 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 6 Phase 1 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 6 Phase 2 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 6 Phase 2 — Tesseract, PDFium, and isolated extraction
+
+**Introduced tools:** Tesseract 5.5.3 (Homebrew, eng/osd data), pypdfium2 5.13.0, and Pillow 12.3.0. Tesseract remains an external executable; Python rendering/image versions are locked. Full environment freeze also records previously installed test/multipart dependencies missing from the old lockfile. Added python-multipart to direct runtime requirements. Primary tool references remain in docs/ocr-plan.md.
+
+**Isolation:** pypdf parsing, PDFium rendering, and Tesseract invocation run in a disposable process rather than concurrent PDFium calls in web threads. A parent-created temporary directory is cleaned after completion; the outer deadline terminates the process group. Native-only pages do not require the renderer or OCR engine. Upload delegates the blocking wait to a threadpool so the async event loop is not blocked by the worker. This is request-bound processing, not durable background execution.
+
+**Safety/quality trade-offs:** 40 pages, 12M pixels at 300 DPI, 20 seconds per OCR call, and 90 seconds per document are conservative bounds, not a hard memory quota or SLA. Entire image-bearing pages use OCR to avoid ignoring a scanned body below a heading. This can reinterpret native text or reject benign graphics. TSV word scores reject empty/low-score output (minimum 40, mean 80); they are heuristics, not calibrated accuracy or truth confidence. English upright print only; no rotation correction or table structure preservation.
+
+**Persistence/UI:** dependency-free SQLite migration v2 adds extraction_method and extraction_error. Existing rows default to native. New facts are committed only after full processing succeeds; failure retains prior evidence. Labels propagate into comparison responses without changing relationship semantics. The original file is never rewritten. No OCRmyPDF/cloud provider/queue was introduced.
+
+**Verification:** 53 backend tests (including migration and synthetic OCR gates), eight browser mocks, real scanned-upload integration, frontend build, and whitespace checks pass. Synthetic fixtures use Pillow's bundled font and pure PDF helpers; no app import or personal files are needed to generate them. Observed small-fixture worker times are recorded in the OCR plan; broader performance/memory tests remain Phase 3. Tests may skip engine-dependent gates on machines without Tesseract; this run had no skips.
+
 
 ## Part 6 Phase 1 — Provisional OCR architecture
 

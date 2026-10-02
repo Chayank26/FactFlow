@@ -51,7 +51,7 @@ def test_all_document_evidence_is_reachable_in_stable_pages():
     # Every extracted fact has the same timestamp and page. Insert in reverse ID
     # order so the test distinguishes an explicit tie-breaker from insertion order.
     with get_connection() as connection:
-        rows = connection.execute("SELECT * FROM facts WHERE document_id = ? ORDER BY id DESC", (document_id,)).fetchall()
+        rows = connection.execute("SELECT id, document_id, claim, source_page, source_text, created_at FROM facts WHERE document_id = ? ORDER BY id DESC", (document_id,)).fetchall()
         assert len(rows) == 65
         connection.execute("DELETE FROM facts WHERE document_id = ?", (document_id,))
         connection.executemany(

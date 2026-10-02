@@ -1,21 +1,36 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 6 Phase 1 (OCR readiness) is complete; Parts 4 and 5 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 6 Phase 2 (OCR extraction) is complete; Parts 4 and 5 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
 - **Documents:** upload PDFs with a `.pdf` filename and `application/pdf` MIME type, up to 10 MB; inspect, reprocess, or delete them. Filenames are sanitized and limited to 120 characters. Extension/MIME checks do not prove valid PDF content; parsing decides whether extraction succeeds.
-- **Extraction:** local `pypdf` text extraction, sentence splitting, noise filtering, and document-level deduplication. Facts retain document ID, page number, and the extracted claim as source text. This is not a full surrounding passage or an independent truth check. Each evidence item links to the stored PDF and its page in a new tab. Image-only PDFs need future OCR.
+- **Extraction:** local `pypdf` text extraction plus Tesseract OCR for pages with raster images or no native text, followed by sentence splitting, noise filtering, and document-level deduplication. Facts retain document ID, page number, and the extracted claim as source text. This is not a full surrounding passage or an independent truth check. Each evidence item links to the stored PDF and its page in a new tab. Facts record `native` or `ocr` extraction method; OCR evidence is labeled for manual verification.
 - **Status:** a stored upload becomes `processed` only when at least one fact is retained; otherwise it remains stored as `extraction_failed`. Successful reprocessing replaces facts and their IDs. Failed reprocessing marks the document failed but preserves previous facts, which remain visible with an earlier-run warning in document details, Facts, and Comparisons. Failed reprocessing refreshes the document status; a successful retry clears the warning. If status cannot be fetched, the UI reports uncertainty.
 - **Facts:** server-side source filtering and SQL `LIKE` search over claim/source text. Browser pages contain 20 facts; API pages default to 50 and allow 1–100. Responses contain `items`, `total`, `limit`, and `offset`. Search uses SQL wildcard semantics (`%` and `_`), not full-text or semantic search.
 - **Comparisons:** derived across documents on each request, using the heuristic described below. Document and comparison lists remain unpaginated; comparison work grows quadratically with the number of facts.
-- **Local scope:** no accounts, authentication, background job queue, OCR, model calls, or public deployment setup. Extraction runs during upload/reprocess requests. The upload-size check currently occurs after reading the full upload into memory.
+- **Local scope:** no accounts, authentication, background job queue, model calls, or public deployment setup. Extraction runs in a disposable process while upload/reprocess requests wait. The upload-size check currently occurs after reading the full upload into memory.
 
 Navigation uses URL hashes; filters and selected-document state live in browser memory. Facts and Comparisons summary cards show results for current filters only in their active view. Inactive/loading/failed views show a dash, and successful empty results show zero. The Documents count is the latest loaded collection size; these are request-time snapshots, not live global metrics. Fact ordering is stable for unchanged records, but offset pages can shift when records change, and reprocessing changes IDs.
 
-## OCR roadmap
+## OCR support and limits
 
-Part 6 has three phases: readiness, OCR extraction, and measured processing-experience improvements. The [OCR plan](docs/ocr-plan.md) defines fixtures, acceptance gates, local-tool findings, and a provisional Tesseract/pypdfium2 approach. Only readiness is complete: no OCR dependency is installed, fixture corpus generated, or recognition benchmark run. Scanned-PDF support remains unimplemented.
+Part 6 Phases 1–2 are complete; Phase 3 will measure larger workloads and decide on background processing. See the [OCR plan and results](docs/ocr-plan.md).
+
+On macOS, install the native engine before using scanned PDFs:
+
+```sh
+brew install tesseract
+tesseract --list-langs
+```
+
+The language list must include `eng`. Install the Python renderer/image packages using the backend lockfile below. Tested versions: Tesseract 5.5.3, pypdfium2 5.13.0, Pillow 12.3.0. `FACTFLOW_TESSERACT` can specify an executable name or absolute path. Native text-only PDFs remain usable without Tesseract. The process-group timeout implementation targets macOS/Linux, not Windows.
+
+Processing limits: **40 pages**, **300-DPI rendering**, **12 million pixels per rendered page**, **20 seconds per Tesseract call**, and **90 seconds per document**. These are conservative limits, not a performance guarantee or a hard total-memory quota. Upload size remains 10 MB.
+
+Every image-bearing page is OCRed as a whole, even when it contains native text; this catches scanned content below selectable headings but can also OCR decorative images/logos and reinterpret native text. Any OCR failure rejects the whole new extraction rather than silently omitting that page. Blank/unreadable pages can therefore fail an otherwise readable document. Original PDFs and prior facts survive failed reprocessing; the UI displays a persisted failure reason.
+
+Recognition currently targets upright English printed text. A basic word-confidence rejection gate is not an accuracy guarantee. Rotation correction, handwriting, complex layouts/tables, additional languages, and extraction history remain unsupported. The rotated fixture was rejected; clean and mildly degraded fixtures passed. Schema version 2 adds extraction method and error metadata; existing facts default to native text.
 
 ## Run locally
 
@@ -89,13 +104,13 @@ PLAYWRIGHT_CHANNEL=chrome npm run test:integration
 
 This separate suite starts a real FastAPI server on **8029** and Vite on **5190**, and refuses to reuse running servers; both ports must be free. The Python test launcher sets a new temporary data directory before importing the app and adds only the test frontend origin to its CORS middleware. Normal app configuration is unchanged. Playwright stops both servers, and graceful backend shutdown removes temporary storage. A forced process kill may leave a temporary directory behind, never the normal app database.
 
-The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop lifecycle workflow including extraction failure/recovery; the separate eight-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
+The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop lifecycle workflow including extraction failure/recovery and real scanned-PDF upload; the separate eight-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
 
 ## Inspect original sources
 
 Use **Open PDF · page N (new tab)** in document details, Facts, or either comparison source. The link requests `GET /documents/{id}/source` and passes `#page=N` to the browser's PDF viewer. The API returns the original stored bytes inline; page navigation depends on viewer support and may require manual navigation. Missing/deleted sources return 404. Source access is limited to registered files inside the configured upload directory.
 
-The PDF is the currently stored file, not a versioned snapshot of an extraction run. Earlier-run evidence warnings still apply after failed reprocessing; replacing source bytes externally can make that evidence differ from the current file. Source links do not add OCR, sentence highlighting, or surrounding-passage extraction. This remains a local app without authentication.
+The PDF is the currently stored file, not a versioned snapshot of an extraction run. Earlier-run evidence warnings still apply after failed reprocessing; replacing source bytes externally can make that evidence differ from the current file. Source links open original bytes, not a searchable OCR derivative; they do not add sentence highlighting or surrounding-passage extraction. This remains a local app without authentication.
 
 ## Comparison limits
 
@@ -139,6 +154,8 @@ frontend/src/index.css         Responsive visual styling
 frontend/playwright.config.js  Isolated browser test server and viewports
 frontend/tests/                Mocked-API browser workflow checks
 backend/app/main.py            FastAPI API, SQLite storage, extraction, and comparisons
+backend/app/extraction.py      Document deadline and subprocess lifecycle
+backend/app/ocr_worker.py      Native extraction, rendering, and English OCR
 backend/tests/                  Backend tests and isolated browser API launcher
 frontend/integration/          Real browser/API workflow
 frontend/playwright.integration.config.js  Integration server lifecycle

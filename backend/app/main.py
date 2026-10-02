@@ -8,8 +8,9 @@ from pathlib import Path
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
-from pypdf import PdfReader
+from app.extraction import extract_pages
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("FACTFLOW_DATA_DIR", str(BASE_DIR / "data"))).resolve()
@@ -17,7 +18,7 @@ UPLOADS_DIR = DATA_DIR / "uploads"
 DB_PATH = DATA_DIR / "factlayer.db"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_FILENAME_LENGTH = 120
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def init_db() -> None:
@@ -52,6 +53,12 @@ def init_db() -> None:
             )
             """
         )
+        document_columns = {row[1] for row in connection.execute("PRAGMA table_info(documents)")}
+        if "extraction_error" not in document_columns:
+            connection.execute("ALTER TABLE documents ADD COLUMN extraction_error TEXT")
+        fact_columns = {row[1] for row in connection.execute("PRAGMA table_info(facts)")}
+        if "extraction_method" not in fact_columns:
+            connection.execute("ALTER TABLE facts ADD COLUMN extraction_method TEXT NOT NULL DEFAULT 'native'")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_facts_document_id ON facts (document_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_facts_created_at ON facts (created_at)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents (created_at)")
@@ -92,12 +99,14 @@ class DocumentResponse(BaseModel):
     stored_path: str
     created_at: str
     status: str
+    extraction_error: str | None = None
 
 
 class FactResponse(BaseModel):
     id: str
     document_id: str
     claim: str
+    extraction_method: str = "native"
     source_page: int
     source_text: str
     created_at: str
@@ -116,11 +125,13 @@ class ComparisonResponse(BaseModel):
     summary: str
     left_document_id: str
     left_document_name: str
+    left_extraction_method: str = "native"
     left_claim: str
     left_page: int
     left_source_text: str
     right_document_id: str
     right_document_name: str
+    right_extraction_method: str = "native"
     right_claim: str
     right_page: int
     right_source_text: str
@@ -147,14 +158,16 @@ def split_claims(text: str) -> list[str]:
 
 
 def extract_facts(file_path: Path, document_id: str) -> list[FactResponse]:
-    reader = PdfReader(str(file_path))
+    pages = extract_pages(file_path)
     extracted: list[FactResponse] = []
     seen_claims: set[str] = set()
     created_at = datetime.now(timezone.utc).isoformat()
 
-    for page_number, page in enumerate(reader.pages, start=1):
-        text = page.extract_text() or ""
-        for claim in split_claims(text):
+    for page_number, page in enumerate(pages, start=1):
+        claims = split_claims(page['text'])
+        if not claims and page["method"] == "ocr":
+            raise ValueError(f"Page {page_number} contains no usable claims; extraction is incomplete.")
+        for claim in claims:
             normalized_claim = claim.casefold()
             if normalized_claim in seen_claims:
                 continue
@@ -164,6 +177,7 @@ def extract_facts(file_path: Path, document_id: str) -> list[FactResponse]:
                     id=str(uuid.uuid4()),
                     document_id=document_id,
                     claim=claim,
+                    extraction_method=page["method"],
                     source_page=page_number,
                     source_text=claim,
                     created_at=created_at,
@@ -184,13 +198,14 @@ def document_from_row(row: sqlite3.Row) -> DocumentResponse:
         stored_path=row["stored_path"],
         created_at=row["created_at"],
         status=row["status"],
+        extraction_error=row["extraction_error"],
     )
 
 
 def get_document_row(document_id: str) -> sqlite3.Row:
     with get_connection() as connection:
         row = connection.execute(
-            "SELECT id, filename, size_bytes, content_type, stored_path, created_at, status FROM documents WHERE id = ?",
+            "SELECT id, filename, size_bytes, content_type, stored_path, created_at, status, extraction_error FROM documents WHERE id = ?",
             (document_id,),
         ).fetchone()
     if row is None:
@@ -207,23 +222,23 @@ def process_document(document_id: str, file_path: Path) -> list[FactResponse]:
     except Exception as error:
         with get_connection() as connection:
             connection.execute(
-                "UPDATE documents SET status = 'extraction_failed' WHERE id = ?",
-                (document_id,),
+                "UPDATE documents SET status = 'extraction_failed', extraction_error = ? WHERE id = ?",
+                (str(error) if isinstance(error, ValueError) else "The PDF could not be processed.", document_id),
             )
             connection.commit()
-        raise HTTPException(status_code=422, detail="The PDF could not be processed") from error
+        raise HTTPException(status_code=422, detail=str(error) if isinstance(error, ValueError) else "The PDF could not be processed") from error
 
     with get_connection() as connection:
         connection.execute("DELETE FROM facts WHERE document_id = ?", (document_id,))
         connection.executemany(
-            "INSERT INTO facts (id, document_id, claim, source_page, source_text, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO facts (id, document_id, claim, source_page, source_text, created_at, extraction_method) VALUES (?, ?, ?, ?, ?, ?, ?)",
             [
-                (fact.id, fact.document_id, fact.claim, fact.source_page, fact.source_text, fact.created_at)
+                (fact.id, fact.document_id, fact.claim, fact.source_page, fact.source_text, fact.created_at, fact.extraction_method)
                 for fact in facts
             ],
         )
         connection.execute(
-            "UPDATE documents SET status = 'processed' WHERE id = ?",
+            "UPDATE documents SET status = 'processed', extraction_error = NULL WHERE id = ?",
             (document_id,),
         )
         connection.commit()
@@ -278,7 +293,7 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
         connection.commit()
 
     try:
-        process_document(document_id, file_path)
+        await run_in_threadpool(process_document, document_id, file_path)
         status = "processed"
     except HTTPException:
         status = "extraction_failed"
@@ -289,22 +304,14 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
             )
             connection.commit()
 
-    return DocumentResponse(
-        id=document_id,
-        filename=safe_name,
-        size_bytes=len(content),
-        content_type=file.content_type,
-        stored_path=str(file_path),
-        created_at=created_at,
-        status=status,
-    )
+    return document_from_row(get_document_row(document_id))
 
 
 @app.get("/documents", response_model=list[DocumentResponse])
 def list_documents() -> list[DocumentResponse]:
     with get_connection() as connection:
         rows = connection.execute(
-            "SELECT id, filename, size_bytes, content_type, stored_path, created_at, status FROM documents ORDER BY created_at DESC"
+            "SELECT id, filename, size_bytes, content_type, stored_path, created_at, status, extraction_error FROM documents ORDER BY created_at DESC"
         ).fetchall()
 
     return [document_from_row(row) for row in rows]
@@ -368,7 +375,7 @@ def list_facts(
     where_clause = f" WHERE {' AND '.join(conditions)}" if conditions else ""
     count_query = f"SELECT COUNT(*) FROM facts{where_clause}"
     query = (
-        "SELECT id, document_id, claim, source_page, source_text, created_at "
+        "SELECT id, document_id, claim, source_page, source_text, created_at, extraction_method "
         f"FROM facts{where_clause} ORDER BY created_at DESC, source_page ASC, id ASC LIMIT ? OFFSET ?"
     )
 
@@ -382,6 +389,7 @@ def list_facts(
                 id=row["id"],
                 document_id=row["document_id"],
                 claim=row["claim"],
+                extraction_method=row["extraction_method"],
                 source_page=row["source_page"],
                 source_text=row["source_text"],
                 created_at=row["created_at"],
@@ -416,7 +424,7 @@ def list_comparisons(
     with get_connection() as connection:
         rows = connection.execute(
             """
-            SELECT facts.id, facts.document_id, facts.claim, facts.source_page, facts.source_text,
+            SELECT facts.id, facts.document_id, facts.claim, facts.source_page, facts.source_text, facts.extraction_method,
                    documents.filename AS document_name
             FROM facts
             JOIN documents ON documents.id = facts.document_id
@@ -459,11 +467,13 @@ def list_comparisons(
                     left_document_id=left["document_id"],
                     left_document_name=left["document_name"],
                     left_claim=left["claim"],
+                    left_extraction_method=left["extraction_method"],
                     left_page=left["source_page"],
                     left_source_text=left["source_text"],
                     right_document_id=right["document_id"],
                     right_document_name=right["document_name"],
                     right_claim=right["claim"],
+                    right_extraction_method=right["extraction_method"],
                     right_page=right["source_page"],
                     right_source_text=right["source_text"],
                 )

@@ -1,16 +1,30 @@
 # Part 6 — OCR readiness and acceptance plan
 
-Phase 1 defines the corpus, acceptance gates, and implementation direction. OCR is not installed or implemented, and no recognition benchmark has been run. Phases 2–3 remain planned.
+Phases 1–2 are complete: the synthetic corpus is generated in tests and OCR is implemented. Phase 3 remains planned. Original readiness specifications below are retained with current results here.
 
 ## Three phases
 
 1. **Readiness (complete):** define representative fixtures, document acceptance criteria, inspect local capabilities, and compare implementations.
-2. **OCR extraction:** materialize the corpus, install and verify dependencies, implement page-aware fallback with explicit failures and provenance, and run the acceptance checks below.
+2. **OCR extraction (complete):** materialize the corpus, install and verify dependencies, implement page-aware fallback with explicit failures and provenance, and run the acceptance checks below.
 3. **Processing experience:** measure latency/resource use, decide whether background execution is needed, and verify progress, retries, cancellation/failure handling, and reprocessing. A queue is not predetermined.
+
+## Phase 2 results
+
+Installed Tesseract 5.5.3 with eng/osd, pypdfium2 5.13.0, and Pillow 12.3.0. Synthetic fixtures use Pillow's bundled Aileron font at 48px on an 1800x900, 300-DPI image. No personal PDFs or image generation service is involved. Native fixture helpers no longer import the app, avoiding import-time database initialization during fixture generation.
+
+All exact gates passed for clean scans, mixed pages, same-page text/image content, numbers/negation, duplicates, and native-text controls. A 90-degree rotated scan failed explicitly; a half-resolution/upscaled, 2-degree skewed fixture recovered the expected text. These tiny fixtures do not establish general scan accuracy. One-off local extraction timings (including worker startup): clean 0.153s, rotated rejection 0.176s, degraded 0.151s. No load/memory benchmark or queue decision is claimed.
+
+Implemented limits are 40 pages, 300 DPI, 12M pixels/page, 20s OCR call timeout, and 90s document timeout. They provide conservative safeguards with substantial headroom over these fixtures; Phase 3 must evaluate larger inputs and an interactive latency budget. The outer timeout kills the extraction process group, including any active OCR child. This is macOS/Linux process handling. Pixel/page limits are not a hard process-memory limit.
+
+Native text-only pages keep pypdf extraction; all image-bearing pages or pages without native text use whole-page OCR. Unreadable/blank OCR pages fail the entire new extraction, preserving prior facts. This deliberately prioritizes explicit failure over partial results but may reject decorative-image or blank-page documents. There is no claim of reliable page completeness for every PDF layout. English Tesseract TSV word scores reject empty output, a minimum word score below 40, or mean below 80; scores do not establish correctness and can miss high-confidence errors.
+
+Schema v2 stores native/OCR method per fact and a failure reason per document. Existing rows migrate as native with no data replacement. Source bytes remain untouched. OCR facts and comparison sides are labeled in the UI. Upload processing waits in a threadpool while the disposable worker runs; it is not a persisted background job.
+
+Verification: 53 backend tests, eight mocked desktop/mobile checks, real browser/API integration including scanned upload, frontend build, and whitespace checks pass. Operational tests cover missing engine/language data, renderer failure, per-page/document timeout, page/pixel budgets, encryption, and retained-evidence recovery. The synthetic OCR acceptance tests skip when Tesseract is absent; no skips occurred in this verified run. Future runs must report skips rather than claiming OCR verification.
 
 ## Fixture specification
 
-Generate synthetic fixtures into temporary test storage; commit generators and expected text, not personal documents. These are specifications, not an already generated or benchmarked corpus. Each scanned fixture must contain a raster image with no selectable text; assert that pypdf returns no text on that page before using it to test OCR. Use a fixed bundled or explicitly located font and record raster resolution. Start with English printed text at 300 DPI; real-world scan accuracy will require a broader later corpus.
+Generate synthetic fixtures into temporary test storage; commit generators and expected text, not personal documents. These specifications are now materialized by backend/tests/ocr_fixtures.py and tested in backend/tests/test_ocr.py. Each scanned fixture must contain a raster image with no selectable text; assert that pypdf returns no text on that page before using it to test OCR. Use a fixed bundled or explicitly located font and record raster resolution. Start with English printed text at 300 DPI; real-world scan accuracy will require a broader later corpus.
 
 | Case | Construction | Ground truth / required outcome |
 |---|---|---|
@@ -48,7 +62,7 @@ At Phase 1 inspection, `tesseract`, `pdftoppm`, and `ocrmypdf` were not on PATH.
 | OCRmyPDF | Useful if generating searchable derivative PDFs becomes a product requirement | Broader PDF-processing/dependency surface; original-versus-derived source handling adds complexity for this app. Evaluate mixed-content behavior rather than assuming skip-text modes solve it. |
 | Hosted OCR | Possible future option | Sends source data externally and adds credentials, cost, and network availability concerns; inconsistent with the current local-only scope. No provider selected. |
 
-**Decision:** provisionally use pypdfium2 to render selected pages and Tesseract CLI for OCR, retaining pypdf for native text and the existing fact pipeline. Confirm compatibility, English language data, and fixture results in Phase 2 before locking versions. Pillow may be used for fixture generation/image conversion if required. This is an architectural choice, not a measured quality/performance result.
+**Decision implemented in Phase 2:** use pypdfium2 to render selected pages and Tesseract CLI for OCR, retaining pypdf for native text and the existing fact pipeline. Confirm compatibility, English language data, and fixture results in Phase 2 before locking versions. Pillow may be used for fixture generation/image conversion if required. This is an architectural choice, not a measured quality/performance result.
 
 Tesseract takes images rather than PDF input, so rendering is necessary. pypdfium2 supplies PDF rendering and prebuilt wheels for supported platforms. OCRmyPDF provides a larger ready-made PDF workflow. Primary references reviewed for this decision:
 
@@ -59,4 +73,4 @@ Tesseract takes images rather than PDF input, so rendering is necessary. pypdfiu
 
 ## Phase 3 measurement gate
 
-Record engine/renderer versions, machine, language data, pages/DPI, per-page and total wall time, and memory observations for single-page and multi-page fixtures. Set an interactive latency budget before judging results. If synchronous processing exceeds it, design bounded background execution with explicit job state and retry behavior; otherwise retain synchronous processing and document the measured limit. No performance numbers or background-worker decision exist yet.
+Record engine/renderer versions, machine, language data, pages/DPI, per-page and total wall time, and memory observations for single-page and multi-page fixtures. Set an interactive latency budget before judging results. If synchronous processing exceeds it, design bounded background execution with explicit job state and retry behavior; otherwise retain synchronous processing and document the measured limit. Only small-fixture timings exist so far; no larger-workload/memory results or background-job decision exist yet.

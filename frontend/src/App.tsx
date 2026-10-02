@@ -12,6 +12,7 @@ type DocumentRecord = {
   stored_path: string
   created_at: string
   status: string
+  extraction_error?: string | null
 }
 type ComparisonRecord = {
   id: string
@@ -20,11 +21,13 @@ type ComparisonRecord = {
   left_document_id: string
   left_document_name: string
   left_claim: string
+  left_extraction_method?: string
   left_page: number
   left_source_text: string
   right_document_id: string
   right_document_name: string
   right_claim: string
+  right_extraction_method?: string
   right_page: number
   right_source_text: string
 }
@@ -33,6 +36,7 @@ type FactRecord = {
   id: string
   document_id: string
   claim: string
+  extraction_method?: string
   source_page: number
   source_text: string
   created_at: string
@@ -45,8 +49,8 @@ type FactPage = {
 }
 
 const sections = {
-  documents: { title: 'Documents', subtitle: 'The starting point for everything you know.', icon: Files, emptyTitle: 'Good knowledge starts with a source.', emptyText: 'Upload a text-based PDF to extract claims and inspect their source passages.' },
-  facts: { title: 'Facts', subtitle: 'Every claim, connected to its evidence.', icon: Search, emptyTitle: 'A place for the details that matter.', emptyText: 'Upload a text-based PDF in Documents, then return here to search its extracted claims and evidence.' },
+  documents: { title: 'Documents', subtitle: 'The starting point for everything you know.', icon: Files, emptyTitle: 'Good knowledge starts with a source.', emptyText: 'Upload a PDF to extract claims and inspect their source passages.' },
+  facts: { title: 'Facts', subtitle: 'Every claim, connected to its evidence.', icon: Search, emptyTitle: 'A place for the details that matter.', emptyText: 'Upload a PDF in Documents, then return here to search its extracted claims and evidence.' },
   comparisons: { title: 'Comparisons', subtitle: 'Explore matching wording and possible differences across sources.', icon: GitCompareArrows, emptyTitle: 'Find the context between the claims.', emptyText: 'No matching claim pairs were found for this selection. Try other filters or add documents to compare.' },
 }
 
@@ -378,6 +382,7 @@ export default function App() {
                         <div className="document-header">
                           <h3>{document.filename}</h3>
                           <span className="document-status">{document.status}</span>
+                          {document.extraction_error && <p className="error-text">{document.extraction_error}</p>}
                         </div>
                         <div className="document-meta">
                           <span>{formatBytes(document.size_bytes)}</span>
@@ -403,9 +408,10 @@ export default function App() {
                 {loadingDetails ? <div className="document-loading">Loading evidence…</div> : detailsError ? <div className="error-panel" role="alert">{detailsError} <button onClick={() => setSelectedDocument(current => current ? { ...current } : null)}>Retry evidence</button></div> : <>
                   <p className="detail-empty">Source links open the stored PDF in a new tab. Page navigation depends on your PDF viewer.</p>
                   <div className="detail-meta"><span>{formatBytes(selectedDocument.size_bytes)}</span><span>{selectedDocument.status}</span><span>{formatDate(selectedDocument.created_at)}</span></div>
+                  {selectedDocument.extraction_error && <p className="error-text">{selectedDocument.extraction_error}</p>}
                   {selectedDocument.status === 'extraction_failed' && <p className="error-text" role="status">{detailTotal > 0 ? 'Latest extraction failed. This evidence is retained from an earlier successful run.' : 'Latest extraction failed. No extracted evidence is available.'}</p>}
                   {selectedFacts.length === 0 ? <p className="detail-empty">No extracted facts are stored for this document.</p> : <div className="fact-list">
-                    {selectedFacts.map(fact => <article className="fact-row" key={fact.id}><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span><SourceLink documentId={fact.document_id} page={fact.source_page} /></article>)}
+                    {selectedFacts.map(fact => <article className="fact-row" key={fact.id}><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text} · {fact.extraction_method === 'ocr' ? 'OCR — verify against PDF' : 'Native text'}</span><SourceLink documentId={fact.document_id} page={fact.source_page} /></article>)}
                   </div>}
                   {detailTotal > 0 && <nav className="fact-pagination" aria-label="Document evidence pages"><span>Showing {detailOffset + 1}–{detailOffset + selectedFacts.length} of {detailTotal}</span><div><button disabled={detailOffset === 0} onClick={() => setDetailOffset(offset => Math.max(0, offset - factLimit))}>Previous</button><button disabled={detailOffset + factLimit >= detailTotal} onClick={() => setDetailOffset(offset => offset + factLimit)}>Next</button></div></nav>}
                 </>}
@@ -438,7 +444,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="fact-browser-list">
-                    {facts.map(fact => <article className="fact-browser-card" key={fact.id}><div className="fact-browser-icon"><Search size={16} /></div><div><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span><SourceLink documentId={fact.document_id} page={fact.source_page} />{evidenceWarning(fact.document_id) && <p className="error-text" role="status">{evidenceWarning(fact.document_id)}</p>}</div></article>)}
+                    {facts.map(fact => <article className="fact-browser-card" key={fact.id}><div className="fact-browser-icon"><Search size={16} /></div><div><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text} · {fact.extraction_method === 'ocr' ? 'OCR — verify against PDF' : 'Native text'}</span><SourceLink documentId={fact.document_id} page={fact.source_page} />{evidenceWarning(fact.document_id) && <p className="error-text" role="status">{evidenceWarning(fact.document_id)}</p>}</div></article>)}
                     <div className="fact-pagination"><span>Showing {factOffset + 1}–{Math.min(factOffset + facts.length, factTotal)} of {factTotal}</span><div><button disabled={factOffset === 0} onClick={() => setFactOffset(offset => Math.max(0, offset - factLimit))}>Previous</button><button disabled={factOffset + factLimit >= factTotal} onClick={() => setFactOffset(offset => offset + factLimit)}>Next</button></div></div>
                   </div>
                 )
@@ -485,13 +491,13 @@ export default function App() {
                         <div className="comparison-source">
                           <strong>{comparison.left_document_name}</strong>
                           <p>{comparison.left_claim}</p>{evidenceWarning(comparison.left_document_id) && <p className="error-text" role="status">{evidenceWarning(comparison.left_document_id)}</p>}
-                          <span>Page {comparison.left_page} · {comparison.left_source_text}</span><SourceLink documentId={comparison.left_document_id} page={comparison.left_page} />
+                          <span>Page {comparison.left_page} · {comparison.left_source_text}{comparison.left_extraction_method === 'ocr' ? ' · OCR — verify against PDF' : ''}</span><SourceLink documentId={comparison.left_document_id} page={comparison.left_page} />
                         </div>
                         <div className="comparison-divider" aria-hidden="true"><GitCompareArrows size={16} /></div>
                         <div className="comparison-source">
                           <strong>{comparison.right_document_name}</strong>
                           <p>{comparison.right_claim}</p>{evidenceWarning(comparison.right_document_id) && <p className="error-text" role="status">{evidenceWarning(comparison.right_document_id)}</p>}
-                          <span>Page {comparison.right_page} · {comparison.right_source_text}</span><SourceLink documentId={comparison.right_document_id} page={comparison.right_page} />
+                          <span>Page {comparison.right_page} · {comparison.right_source_text}{comparison.right_extraction_method === 'ocr' ? ' · OCR — verify against PDF' : ''}</span><SourceLink documentId={comparison.right_document_id} page={comparison.right_page} />
                         </div>
                       </div>
                     </article>

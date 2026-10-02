@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 
 function pdf(text) {
   const stream = `BT /F1 12 Tf 72 720 Td (${text}) Tj ET`
@@ -115,5 +116,18 @@ test('real PDF upload, extraction, pagination, comparison, reprocess, and deleti
   expect(await (await request.get(`${api}/documents`)).json()).toEqual([])
   expect((await (await request.get(`${api}/facts`)).json()).total).toBe(0)
   expect(await (await request.get(`${api}/comparisons`)).json()).toEqual([])
+  const scanPath = test.info().outputPath('scan.pdf')
+  execFileSync('../backend/.venv/bin/python', ['-m', 'tests.ocr_fixtures', scanPath], { cwd: '../backend' })
+  await page.locator('input[type=file]').first().setInputFiles(scanPath)
+  await page.getByRole('button', { name: 'View scan.pdf', exact: true }).click()
+  await expect(detail).toContainText('Revenue increased 20 percent.')
+  await expect(detail).toContainText('OCR — verify against PDF')
+  const scanned = (await (await request.get(`${api}/documents`)).json())[0]
+  expect(scanned.status).toBe('processed')
+  expect((await (await request.get(`${api}/facts?document_id=${scanned.id}`)).json()).items[0].extraction_method).toBe('ocr')
+  expect(await (await request.get(`${api}/documents/${scanned.id}/source`)).body()).toEqual(readFileSync(scanPath))
+  page.once('dialog', dialog => dialog.accept())
+  await page.getByRole('button', { name: 'Delete scan.pdf', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'View scan.pdf', exact: true })).toHaveCount(0)
   expect(errors).toEqual([])
 })

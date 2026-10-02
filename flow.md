@@ -1,6 +1,17 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 6 Phase 1 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 6 Phase 2 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 6 Phase 2 — Native and OCR evidence
+
+**User journey:** upload a PDF → processing selects native text or whole-page OCR → successful facts show page/source text and native/OCR method → inspect original PDF links → search/compare evidence. OCR facts and comparison sides prompt verification. Failure reasons appear in the document list/detail. A failed reprocess retains earlier evidence and its warning; successful retry clears the error and replaces facts.
+
+**Data flow:** request stores original bytes → disposable Python extraction process → pypdf page inspection → native-only page text or pypdfium2 raster at 300 DPI → local Tesseract English TSV → confidence rejection gate → sentence/noise filtering/deduplication → all accepted facts committed with page/method. A failed OCR page aborts the new fact set instead of partially committing it. Source responses still serve original stored bytes.
+
+**Limits/current behavior:** maximum 40 pages, 12M rendered pixels per page, 20s per OCR call, 90s per document. Image-bearing pages are OCRed even if native text exists, which handles mixed content but can reinterpret native text or reject decorative images/blank pages. OCR targets upright English print, not guaranteed recognition. Metadata migration adds error/method fields with native defaults for older facts. Text-only parsing works without Tesseract. macOS/Linux process groups enforce the deadline; no background queue/progress stream exists yet.
+
+**Verification:** 53 backend tests, eight mocked browser checks, real scanned-PDF browser/API workflow, frontend build, and whitespace checks pass. Original bytes, page references, schema upgrade, failure recovery, and exact synthetic claims are covered. Rotated fixture fails explicitly; clean and mildly degraded fixtures pass. Part 6 Phase 3 performance/processing experience remains planned; later scale/evaluation work is not implemented.
+
 
 ## Part 6 Phase 1 — OCR readiness, no runtime change
 

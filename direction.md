@@ -1,6 +1,19 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 6 Phase 1 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 6 Phase 2 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 6 Phase 2 — Local OCR extraction
+
+Implemented the selected Tesseract/pypdfium2 path and materialized the synthetic scan corpus. Native-only pages retain pypdf extraction; image-bearing pages (including native headings with scanned content) and pages without native text use whole-page English OCR. Facts record extraction method, the UI labels OCR evidence, and documents persist/display specific failure reasons. Schema v2 upgrades existing facts to native without replacing their data. Original source PDFs remain unchanged.
+
+Extraction runs in a disposable process with a 90-second document deadline, 20-second OCR-call deadline, 40-page limit, 300-DPI rendering, and 12M-pixel page limit. A failed OCR page rejects the new extraction and preserves earlier facts. Upload waits via the existing threadpool; no durable background jobs were added. Installed Tesseract 5.5.3 with English data, pypdfium2 5.13.0, and Pillow 12.3.0; regenerated the lockfile to include installed runtime/test dependencies and explicitly listed multipart support.
+
+Verification: 53 backend tests, eight mocked desktop/mobile checks, real browser/API integration with scanned upload, frontend build, and whitespace checks pass. Clean, mixed-page, same-page mixed, numeric/negation, duplicate, and text-control exact gates pass. Rotated input rejects explicitly; mildly degraded input recovers expected text. Operational tests cover missing engine/language, renderer failure, timeouts, encryption, limits, and retained evidence; migration tests preserve legacy rows. One-off worker times were 0.153s clean, 0.176s rotated rejection, and 0.151s degraded, not a load benchmark. A PDFium context-manager mismatch was corrected during development. A diagnostic fixture import touched the tracked local schema; restored that file to its clean starting bytes and split pure fixture helpers to prevent recurrence. No local document changes remain in the diff.
+
+Suggested commit message: `feat: add bounded local OCR with extraction provenance and failure reporting`
+
+Part 6 Phase 2 is complete. Phase 3 remains: measure broader latency/resources and decide on processing progress/background execution. No git commit was created.
+
 
 ## Part 6 Phase 1 — OCR readiness
 
@@ -75,7 +88,7 @@ All three Part 5 phases are complete; their checkpoints are recorded above. Rema
 ### Part 6 — Scanned PDF support
 
 1. **Readiness specification complete:** Define representative scanned/text/mixed fixtures and extraction acceptance criteria; evaluate local OCR options before selecting dependencies.
-2. Add an OCR processor with page provenance and explicit failures. Checkpoint: scanned and mixed documents produce inspectable evidence without regressing text PDFs.
+2. **Complete:** Add an OCR processor with page provenance and explicit failures. Checkpoint: scanned and mixed documents produce inspectable evidence without regressing text PDFs.
 3. Add processing progress/background execution if measured OCR latency requires it, then verify retries and reprocessing. OCR accuracy must be reported as a limitation, not assumed.
 
 ### Part 7 — Larger collections and evaluated comparisons
