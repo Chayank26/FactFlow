@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Parts 4 and 5 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 6 Phase 1 (OCR readiness) is complete; Parts 4 and 5 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -12,6 +12,10 @@ A practice project for extracting grounded facts from PDFs and comparing their c
 - **Local scope:** no accounts, authentication, background job queue, OCR, model calls, or public deployment setup. Extraction runs during upload/reprocess requests. The upload-size check currently occurs after reading the full upload into memory.
 
 Navigation uses URL hashes; filters and selected-document state live in browser memory. Facts and Comparisons summary cards show results for current filters only in their active view. Inactive/loading/failed views show a dash, and successful empty results show zero. The Documents count is the latest loaded collection size; these are request-time snapshots, not live global metrics. Fact ordering is stable for unchanged records, but offset pages can shift when records change, and reprocessing changes IDs.
+
+## OCR roadmap
+
+Part 6 has three phases: readiness, OCR extraction, and measured processing-experience improvements. The [OCR plan](docs/ocr-plan.md) defines fixtures, acceptance gates, local-tool findings, and a provisional Tesseract/pypdfium2 approach. Only readiness is complete: no OCR dependency is installed, fixture corpus generated, or recognition benchmark run. Scanned-PDF support remains unimplemented.
 
 ## Run locally
 

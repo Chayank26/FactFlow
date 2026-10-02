@@ -1,6 +1,17 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 5 complete through Phase 3 (Part 4 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 6 Phase 1 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 6 Phase 1 — Provisional OCR architecture
+
+No new tool or dependency was installed. Used existing filesystem/virtual-environment inspection, pytest, and primary vendor/project documentation to define the next implementation. The environment lacks Tesseract, Poppler's pdftoppm, OCRmyPDF, Pillow, pypdfium2, and pytesseract in the checked PATH/venv locations.
+
+Provisional direction: Tesseract CLI with pypdfium2 page rendering, retaining pypdf and the existing fact pipeline. Tesseract expects images, so rendering is a separate requirement. OCRmyPDF is a broader PDF-processing alternative; a hosted service would change local-only data handling and add credentials/cost. References, trade-offs, fixture specifications, and acceptance gates are in docs/ocr-plan.md. No accuracy/performance comparison was executed; Phase 2 must verify dependency compatibility and real OCR results before locking versions.
+
+No queue is selected. Phase 3 first measures latency/resource behavior against an explicit interactive budget and adds background execution only if warranted. Original-source preservation, page provenance, per-page limits/timeouts, and explicit incomplete-extraction behavior are required implementation decisions.
+
+Verification: 37 backend tests pass using the documented backend working directory. Documentation links/fences and whitespace checks pass; no frontend rerun for this documentation-only phase. The first root-directory test invocation failed imports, then the documented invocation passed. Existing deprecation warnings remain.
+
 
 ## Part 5 Phase 3 — PDF response and shared source links
 

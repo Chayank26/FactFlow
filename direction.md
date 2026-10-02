@@ -1,6 +1,19 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 5 complete through Phase 3 (Part 4 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 6 Phase 1 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 6 Phase 1 — OCR readiness
+
+Part 6 has three phases: readiness/evaluation, OCR implementation, and measured processing-experience decisions. Completed the readiness checkpoint in docs/ocr-plan.md: eight fixture specifications with ground truth/outcomes, mixed-page and same-page mixed-content coverage, exact numeric/negation gates, operational failures, original-byte preservation, and latency/resource measurement requirements. Fixtures are defined, not yet generated or benchmarked.
+
+Inspected local capabilities: no tesseract, pdftoppm, or ocrmypdf on PATH; no Pillow, pypdfium2, or pytesseract in the backend environment. Compared primary documentation for Tesseract, pypdfium2, and OCRmyPDF. Provisionally selected Tesseract CLI plus pypdfium2 rendering for explicit page-level integration; installation, version compatibility, recognition accuracy, and performance must be verified in Phase 2. No runtime dependencies or code changed.
+
+Verification: the readiness document covers the planned fixture classes, acceptance gates, alternatives, environment gaps, and Phase 3 measurement boundary. All 37 backend tests pass from backend/ using the documented command. An initial test invocation from the repository root failed module imports; rerunning from the documented working directory passed. Markdown links/fences and whitespace checks pass. Browser/build checks were not rerun for documentation-only changes. No OCR benchmark or support claim is made.
+
+Suggested commit message: `docs: define OCR fixtures acceptance gates and implementation plan`
+
+Phase 1 is complete as a specification/evaluation checkpoint; Phase 2 must materialize fixtures and validate the provisional stack. Two phases remain. No git commit was created.
+
 
 ## Part 5 Phase 3 — Original source inspection
 
@@ -61,7 +74,7 @@ All three Part 5 phases are complete; their checkpoints are recorded above. Rema
 
 ### Part 6 — Scanned PDF support
 
-1. Define representative scanned/text/mixed fixtures and extraction acceptance criteria; evaluate local OCR options before selecting dependencies.
+1. **Readiness specification complete:** Define representative scanned/text/mixed fixtures and extraction acceptance criteria; evaluate local OCR options before selecting dependencies.
 2. Add an OCR processor with page provenance and explicit failures. Checkpoint: scanned and mixed documents produce inspectable evidence without regressing text PDFs.
 3. Add processing progress/background execution if measured OCR latency requires it, then verify retries and reprocessing. OCR accuracy must be reported as a limitation, not assumed.
 

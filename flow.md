@@ -1,6 +1,15 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 5 complete through Phase 3 (Part 4 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 6 Phase 1 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 6 Phase 1 — OCR readiness, no runtime change
+
+The working application still extracts native PDF text, preserves evidence with page references, supports source links, and labels retained evidence after failed reprocessing. Image-only documents still fail extraction. A mixed document can currently yield native-text facts while scanned content is omitted; OCR support must address both page-level and same-page mixtures.
+
+The new docs/ocr-plan.md defines future fixture inputs and acceptance gates. Proposed flow for Phase 2: inspect native content → render pages needing OCR → recognize text locally → merge/deduplicate with page and extraction-method provenance → accept complete extraction or report explicit failure → preserve existing source bytes and earlier evidence on reprocess failure. This flow is planned, not implemented.
+
+Verification: 37 existing backend tests pass. Environment inspection and documented option comparison are complete; scanned fixtures have not been generated, OCR tools are absent, and no accuracy/latency measurements exist. Part 6 has three phases: Phase 1 readiness complete; Phase 2 extraction and Phase 3 measured processing experience remain planned.
+
 
 ## Part 5 Phase 3 — Source inspection completes Part 5
 
