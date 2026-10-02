@@ -1,6 +1,15 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 5 Phase 2 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 5 complete through Phase 3 (Part 4 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 5 Phase 3 — PDF response and shared source links
+
+**No new tool or dependency was needed.** FastAPI/Starlette FileResponse serves PDFs inline; a small React SourceLink component reuses the existing document ID/page provenance in all evidence views. Native PDF viewers avoid adding an embedded renderer and its maintenance cost. The trade-off is viewer-dependent page-fragment behavior and no sentence-level highlighting.
+
+**File boundary:** resolve the registered path, require containment in UPLOADS_DIR and an existing file, then serve application/pdf with inline content disposition and nosniff. Client input chooses a document ID, not a filesystem path. This is appropriate for the current local app, not a new authentication system. Missing/deleted files return 404. The response serves current stored bytes; versioned provenance and relocation of absolute stored paths remain outside this phase.
+
+**Verification:** 37 backend tests pass, including byte/header checks, missing/deleted sources, and an out-of-directory record. Eight mocked browser checks and the real integration pass, verifying source links on all evidence surfaces and actual PDF byte retrieval. Frontend build and whitespace checks pass. Page-two URL generation is covered; native PDF rendering/page navigation is not asserted. Existing dependency warnings and deliberate malformed-PDF diagnostics remain.
+
 
 ## Part 5 Phase 2 — Lifecycle presentation without new persistence
 

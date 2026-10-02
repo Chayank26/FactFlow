@@ -7,6 +7,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pypdf import PdfReader
 
@@ -319,6 +320,21 @@ def reprocess_document(document_id: str) -> DocumentResponse:
     row = get_document_row(document_id)
     process_document(document_id, Path(row["stored_path"]))
     return document_from_row(get_document_row(document_id))
+
+
+@app.get("/documents/{document_id}/source", response_class=FileResponse)
+def get_document_source(document_id: str) -> FileResponse:
+    row = get_document_row(document_id)
+    path = Path(row["stored_path"]).resolve()
+    if not path.is_relative_to(UPLOADS_DIR.resolve()) or not path.is_file():
+        raise HTTPException(status_code=404, detail="Source PDF not found")
+    return FileResponse(
+        path,
+        media_type="application/pdf",
+        filename=row["filename"],
+        content_disposition_type="inline",
+        headers={"X-Content-Type-Options": "nosniff"},
+    )
 
 
 @app.delete("/documents/{document_id}", status_code=204)

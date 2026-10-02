@@ -1,6 +1,17 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 5 Phase 2 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 5 complete through Phase 3 (Part 4 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 5 Phase 3 — Original source inspection
+
+Added GET /documents/{id}/source to serve the registered PDF inline, with its filename and application/pdf type. Resolved paths must stay inside the configured upload directory; missing documents/files or out-of-directory paths return 404. Added a shared source link in document details, Facts, and both comparison panels, targeting a new tab with the recorded page fragment. This follows lifecycle clarity so retained evidence remains explicitly marked while users inspect the source.
+
+Verification: 37 backend tests, eight desktop/mobile browser checks, the real browser/API workflow, frontend build, and git diff --check pass. API regressions cover exact original bytes/headers, deletion, missing files, and out-of-directory protection. Integration assertions verify links in all three views and fetch identical PDF bytes; mocked checks verify a page-two reference. PDF viewer rendering/page-jump behavior is viewer-dependent and was not asserted. Existing warnings and expected damaged-fixture parser diagnostics remain non-blocking.
+
+Updated README with source inspection and its boundaries. No new dependency or schema change. Part 5 is complete; proposed Part 6 evaluates and introduces OCR in separate phases. No git commit was created.
+
+Suggested commit message: `feat: link evidence to original source PDFs and pages`
+
 
 ## Part 5 Phase 2 — Retained evidence and count clarity
 
@@ -40,13 +51,13 @@ Part 4 is complete. No git commit was created. Earlier phase entries remain hist
 
 ## Roadmap — current status and proposed later parts
 
-Part 5 Phases 1–2 are complete; their checkpoints are recorded above. Remaining phases are proposed, not completed or a commitment to specific tools. Continue with one verified phase at a time, updating all three logs and providing a commit message after each checkpoint.
+All three Part 5 phases are complete; their checkpoints are recorded above. Remaining phases are proposed, not completed or a commitment to specific tools. Continue with one verified phase at a time, updating all three logs and providing a commit message after each checkpoint.
 
 ### Part 5 — Real integration and evidence reliability
 
 1. **Complete:** Start an isolated backend for browser tests and run real PDF upload → extraction → evidence → comparisons → deletion. Checkpoint: repeatable full-stack workflow without touching local data.
 2. **Complete:** Make failed reprocessing and retained evidence explicit in the UI, with regression coverage; clarify counts and freshness. Checkpoint: failure cannot silently present old evidence as newly processed.
-3. Improve source inspection and provenance, including direct access to the original PDF/page. Checkpoint: users can check each displayed claim against its source.
+3. **Complete:** Improve source inspection and provenance, including direct access to the original PDF/page. Checkpoint: users can check each displayed claim against its source.
 
 ### Part 6 — Scanned PDF support
 

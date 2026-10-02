@@ -107,6 +107,7 @@ test('comparison filters retain source evidence and cautious labels', async ({ p
   await expect(page.locator('.comparison-card')).toHaveCount(1)
   await expect(page.locator('.relationship-label')).toHaveText('Possible difference')
   await expect(page.getByText('Page 2 · Right source passage')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Open PDF · page 2 (new tab)' })).toHaveAttribute('href', 'http://127.0.0.1:8019/documents/beta/source#page=2')
   expect(state.requests.some(request => request.query.get('document_id') === 'alpha' && request.query.get('relationship') === 'difference')).toBe(true)
   await page.getByRole('combobox', { name: 'Relationship' }).selectOption('agreement')
   await expect(page.locator('.relationship-label')).toHaveText('Matching wording')

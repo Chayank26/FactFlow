@@ -1,6 +1,17 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 5 Phase 2 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 5 complete through Phase 3 (Part 4 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 5 Phase 3 — Source inspection completes Part 5
+
+**Working journey:** upload/process PDFs → browse evidence or search Facts → compare claims → follow Open PDF links from any evidence view → inspect the stored original in a new tab at the referenced page when the viewer supports it. Reprocess/failure warnings and scoped counts remain as completed in Phase 2.
+
+**Source request flow:** document ID and source page → URL /documents/{id}/source#page=N → backend looks up metadata and checks the resolved stored path is a file inside uploads → inline application/pdf response → browser PDF viewer interprets the fragment. The fragment is not sent to the API. Missing/deleted/out-of-directory sources return 404.
+
+**Boundaries:** served bytes are the currently stored PDF, not a versioned extraction snapshot; externally changed files may differ from retained evidence. Page jumping depends on the viewer; no sentence highlighting, OCR, or larger source passages are added. Normal local ports remain 5179/8019; isolated integration uses 5190/8029.
+
+**Verification:** 37 backend tests, eight mocked browser checks, real integration, frontend build, and whitespace checks pass. Links and exact source bytes are verified; PDF viewer internals are not. All three Part 5 phases are complete. Proposed Part 6 OCR and Part 7 scale/evaluation remain unimplemented.
+
 
 ## Part 5 Phase 2 — Failure visibility and scoped counts
 
