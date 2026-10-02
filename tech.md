@@ -1,6 +1,19 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 8 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 complete through Phase 9. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 9 — Documentation and next technical decisions
+
+**No new tool or dependency was needed.** Retained Markdown and repository inspection for documentation, plus the existing pytest suite for backend verification. React/TypeScript/Vite, FastAPI/Pydantic, SQLite, pypdf, and Playwright remain the current stack. README setup uses the existing lockfiles and records app ports 5179/8019 and browser test port 5189.
+
+**Documented trade-offs:** synchronous extraction and full upload reads are simple locally but do not establish bounded-memory/background processing. SQLite LIKE is adequate for current search but has wildcard semantics and no full-text index. Derived comparisons avoid stale persisted pairs but enumerate quadratically. Current source text is the extracted claim. Failed reprocessing preserves earlier evidence; absolute stored PDF paths limit storage portability. These are explicit current limitations, not fixes introduced by documentation.
+
+**Backup boundary:** a SQLite-only copy omits original PDFs. README now documents stopping the backend and archiving the whole data directory outside the repository, plus same-location restore assumptions. Backup commands were not executed on user data; production backup/recovery infrastructure remains out of scope.
+
+**Proposed next decisions:** Part 5 should reuse Playwright/pytest with an isolated real backend to prove the frontend/API contract and improve provenance. Part 6 should evaluate OCR against representative fixtures before choosing native binaries or services. Part 7 should measure scale and comparison quality before adding indexing, candidate matching, embeddings, or a model. No OCR engine, AI provider, queue, deployment platform, or further dependency has been selected or installed.
+
+**Verification:** documentation audited against code/configuration, 33 backend tests pass, local links/paths and whitespace checks pass. The latest frontend build and eight browser checks are the Phase 8 results for unchanged application/test files; no new frontend verification run is claimed. Existing backend deprecation warnings remain.
+
 
 ## Part 4 Phase 8 — Browser workflow checks and polish
 

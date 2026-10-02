@@ -1,6 +1,19 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 8 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 complete through Phase 9. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 9 — Current end-to-end state
+
+**Working user journey:** open Documents → upload a text-based PDF → server stores the PDF and metadata, extracts/deduplicates sentence-sized claims, and marks processed or extraction_failed → inspect document evidence in 20-item pages → search/filter Facts → compare evidence across sources with Matching wording/Possible difference labels → reprocess or delete documents.
+
+**Data movement:** React/Vite on 5179 → FastAPI on 8019 → local SQLite metadata/facts plus uploaded PDFs → paginated fact envelopes or derived comparisons → browser state. The URL hash retains the selected section; filters/detail selection are in memory. Health is a point-in-time check. Stored source_text currently equals the retained claim, not a larger surrounding passage. Comparisons are not persisted or independent fact verification.
+
+**Lifecycle details:** successful reprocessing replaces facts/IDs; failed reprocessing sets extraction_failed but retains earlier facts, which remain queryable. Deletion removes facts, metadata, then the source file. Fact pages have stable ordering for unchanged records; changes can shift offset boundaries. Document/comparison lists are unbounded, and summary cards depend on loaded view/filter data.
+
+**Storage and tests:** backend/data is the default, overridable with FACTFLOW_DATA_DIR. Back up the stopped database and uploaded PDFs together; stored absolute paths constrain restore to a different location. Pytest uses isolated real storage. Playwright uses intercepted API responses on its own frontend port 5189, so live full-stack browser integration remains proposed Part 5 work.
+
+**Checkpoint:** documentation reviewed against implementation, links/paths checked, 33 backend tests pass. The unchanged frontend's latest build and eight browser checks passed in Phase 8, not rerun here. No runtime behavior changed. Part 4 is complete; proposed Part 5 integration/provenance, Part 6 OCR, and Part 7 scale/evaluation are not implemented. Historical entries below retain the state at their original checkpoints.
+
 
 ## Part 4 Phase 8 — Browser workflow checks and polish
 

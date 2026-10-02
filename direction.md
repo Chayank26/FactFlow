@@ -1,6 +1,39 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 8 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 complete through Phase 9. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 9 — Documentation reconciliation
+
+Completed the Part 4 documentation checkpoint after the feature and browser-test phases. README now states the implemented boundaries: paginated fact responses, local extraction/status behavior, retained facts after failed reprocessing, search wildcard semantics, comparison scaling, and view-dependent summary counts. Corrected backup guidance to preserve SQLite and PDFs together while stopped, and documented absolute-path restore constraints. Added the committed browser-test files to the project map. No application code changed.
+
+Verification: reviewed README against backend routes/extraction/storage, frontend request/state behavior, environment example, npm scripts, and Playwright configuration. All 33 backend tests pass in this phase. Documentation links/paths and git diff --check pass. Phase 8's eight browser checks and successful frontend build remain the latest results for those unchanged files; they were not rerun for this documentation-only change. Backup/restore commands were reviewed, not executed on user data. Existing backend deprecation warnings remain.
+
+Suggested commit message: `docs: complete Part 4 documentation and outline next milestones`
+
+Part 4 is complete. No git commit was created. Earlier phase entries remain historical snapshots; this entry and the current summaries supersede earlier planned/completed statements.
+
+## Proposed upcoming parts — not implemented
+
+These are a proposed sequence, not additional completed phases or a commitment to specific tools. Continue with one verified phase at a time, updating all three logs and providing a commit message after each checkpoint.
+
+### Part 5 — Real integration and evidence reliability
+
+1. Start an isolated backend for browser tests and run real PDF upload → extraction → evidence → comparisons → deletion. Checkpoint: repeatable full-stack workflow without touching local data.
+2. Make failed reprocessing and retained evidence explicit in the UI, with regression coverage; clarify counts and freshness. Checkpoint: failure cannot silently present old evidence as newly processed.
+3. Improve source inspection and provenance, including direct access to the original PDF/page. Checkpoint: users can check each displayed claim against its source.
+
+### Part 6 — Scanned PDF support
+
+1. Define representative scanned/text/mixed fixtures and extraction acceptance criteria; evaluate local OCR options before selecting dependencies.
+2. Add an OCR processor with page provenance and explicit failures. Checkpoint: scanned and mixed documents produce inspectable evidence without regressing text PDFs.
+3. Add processing progress/background execution if measured OCR latency requires it, then verify retries and reprocessing. OCR accuracy must be reported as a limitation, not assumed.
+
+### Part 7 — Larger collections and evaluated comparisons
+
+1. Measure retrieval and comparison cost on a representative collection; bound document/comparison responses and reduce unnecessary pair work.
+2. Build a labeled comparison evaluation set before considering semantic matching or a model. Checkpoint: measured improvements and traceable evidence, with explicit errors/limitations.
+3. Reconcile operational documentation and decide whether deployment is needed. Authentication, storage portability, upload resource limits, and deployment controls belong in a separate deployment milestone if public/multi-user use is chosen.
+
 
 ## Part 4 Phase 8 — Browser workflow checks and polish
 
@@ -49,7 +82,7 @@ Continue in small, reviewable phases. After each checkpoint passes, update direc
 - **Phase 6 — Finish pagination integration (complete):** make every document-detail fact accessible, add deterministic fact ordering, and verify navigation beyond the first result page.
 - **Phase 7 — Improve comparison reliability (complete):** cover misleading token matches with regression examples and align classification and UI wording with what the heuristic can establish.
 - **Phase 8 — Browser workflow checks and polish (complete):** add repeatable browser checks for upload, evidence browsing, pagination, reprocess/delete, filters, and errors; remove obsolete future-feature labels.
-- **Phase 9 — Documentation reconciliation (planned):** synchronize operational guidance and current-state descriptions with verified behavior and record the next milestone. OCR remains future work with its own processor and dependency decisions.
+- **Phase 9 — Documentation reconciliation (complete):** synchronize operational guidance and current-state descriptions with verified behavior and record the next milestone. OCR remains future work with its own processor and dependency decisions.
 
 ## Part 4 Phase 5 — Isolated backend test storage
 
