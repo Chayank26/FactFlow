@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8018').replace(/\/$/, '') //removes the slash from the end of the url
+const apiUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8019').replace(/\/$/, '') //removes the slash from the end of the url
 type Status = 'checking' | 'connected' | 'offline' //status is only allowed to be one of the these 3
 
 export default function BackendStatus() {

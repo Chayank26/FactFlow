@@ -45,8 +45,8 @@ type FactPage = {
 }
 
 const sections = {
-  documents: { title: 'Documents', subtitle: 'The starting point for everything you know.', icon: Files, emptyTitle: 'Good knowledge starts with a source.', emptyText: 'Your documents will live here. Soon, you’ll be able to upload PDFs and turn scattered information into traceable facts.' },
-  facts: { title: 'Facts', subtitle: 'Every claim, connected to its evidence.', icon: Search, emptyTitle: 'A place for the details that matter.', emptyText: 'Extracted facts will appear here with their values, context, and source passages. Add and process documents once PDF upload is available.' },
+  documents: { title: 'Documents', subtitle: 'The starting point for everything you know.', icon: Files, emptyTitle: 'Good knowledge starts with a source.', emptyText: 'Upload a text-based PDF to extract claims and inspect their source passages.' },
+  facts: { title: 'Facts', subtitle: 'Every claim, connected to its evidence.', icon: Search, emptyTitle: 'A place for the details that matter.', emptyText: 'Upload a text-based PDF in Documents, then return here to search its extracted claims and evidence.' },
   comparisons: { title: 'Comparisons', subtitle: 'Explore matching wording and possible differences across sources.', icon: GitCompareArrows, emptyTitle: 'Find the context between the claims.', emptyText: 'No matching claim pairs were found for this selection. Try other filters or add documents to compare.' },
 }
 
@@ -197,6 +197,7 @@ export default function App() {
     const file = event.target.files?.[0]
     if (!file) return
 
+    const input = event.currentTarget
     setUploading(true)
     setUploadError(null)
 
@@ -219,7 +220,7 @@ export default function App() {
       setUploadError('The upload could not be saved. Please try again.')
     } finally {
       setUploading(false)
-      event.target.value = ''
+      input.value = ''
     }
   }
 
@@ -311,7 +312,7 @@ export default function App() {
     <div className="main-column">
       <header className="topbar"><div className="breadcrumb"><span>Workspace</span><ChevronRight size={14} /><span>{section.title}</span></div><BackendStatus /></header>
       <main id="main-content" tabIndex={-1}>
-        <div className="page-heading"><div><div className="eyebrow">YOUR KNOWLEDGE WORKSPACE</div><h1>{section.title}</h1><p>{section.subtitle}</p></div><span className="workspace-badge"><span /> Getting started</span></div>
+        <div className="page-heading"><div><div className="eyebrow">YOUR KNOWLEDGE WORKSPACE</div><h1>{section.title}</h1><p>{section.subtitle}</p></div><span className="workspace-badge"><span /> Local workspace</span></div>
 
         <section className="intro-card" aria-labelledby="intro-title"><div className="intro-copy"><span className="intro-label"><Sparkles size={14} /> CONNECT THE DOTS</span><h2 id="intro-title">From scattered pages<br />to a clearer picture.</h2><p>Bring your sources together. Discover the facts.<br className="desktop-break" /> Understand the story between them.</p><a href="#comparisons" className="intro-link">Explore comparisons <ArrowRight size={16} /></a></div><div className="source-art" aria-hidden="true"><div className="art-orbit" /><div className="art-line line-one" /><div className="art-line line-two" /><div className="art-paper paper-one"><FileText size={24} /><i /><i /><i /></div><div className="art-center"><Waypoints size={32} /></div><div className="art-paper paper-two"><span className="art-check"><Check size={17} /></span><i /><i /><i /></div><span className="art-spark spark-one" /><span className="art-spark spark-two" /></div></section>
 
@@ -319,14 +320,14 @@ export default function App() {
           {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description:'Grounded in evidence',icon:Search},{key:'comparisons',label:'Comparisons',description:'Connections across sources',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? documents.length : item.key === 'facts' ? factTotal : comparisons.length || '—'}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
         </div>
 
-        <section className="collection" aria-labelledby="collection-title"><div className="collection-heading"><div><h2 id="collection-title">{view === 'documents' ? 'Your documents' : view === 'facts' ? 'Your facts' : 'Your comparisons'}</h2><span>{view === 'documents' ? 'A home for your source material' : 'Your knowledge will take shape here'}</span></div><span className="coming-label">{view === 'documents' ? 'Live data' : 'Coming soon'}</span></div>
+        <section className="collection" aria-labelledby="collection-title"><div className="collection-heading"><div><h2 id="collection-title">{view === 'documents' ? 'Your documents' : view === 'facts' ? 'Your facts' : 'Your comparisons'}</h2><span>{view === 'documents' ? 'A home for your source material' : view === 'facts' ? 'Search claims and source passages' : 'Review relationships between sources'}</span></div><span className="coming-label">Live data</span></div>
 
           {view === 'documents' ? (
             <div className="documents-panel">
               <div className="documents-actions">
                 <label className="upload-button upload-button-live" aria-label="Upload a document">
                   <Upload size={16} /> Upload PDF
-                  <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} hidden />
+                  <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} disabled={uploading} hidden />
                 </label>
                 {uploading && <span className="empty-hint">Uploading…</span>}
                 {uploadError && <span className="error-text">{uploadError}</span>}
@@ -343,7 +344,7 @@ export default function App() {
                   <p>{section.emptyText}</p>
                   <label className="upload-button upload-button-live" aria-label="Upload your first document">
                     <Upload size={16} /> Upload PDF
-                    <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} hidden />
+                    <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} disabled={uploading} hidden />
                   </label>
                 </div>
               ) : (
@@ -484,7 +485,7 @@ export default function App() {
           )}
         </section>
 
-        <div className="workflow-strip"><span className="workflow-title">HOW IT WILL WORK</span><span><span className="step-number">1</span> Add documents</span><ChevronRight size={14} /><span><span className="step-number">2</span> Discover facts</span><ChevronRight size={14} /><span><span className="step-number">3</span> Compare evidence</span></div>
+        <div className="workflow-strip"><span className="workflow-title">HOW IT WORKS</span><span><span className="step-number">1</span> Add documents</span><ChevronRight size={14} /><span><span className="step-number">2</span> Discover facts</span><ChevronRight size={14} /><span><span className="step-number">3</span> Compare evidence</span></div>
         <footer className="page-footer"><span>Built for curiosity. Grounded in evidence.</span><span>Fact Layer · Practice workspace</span></footer>
       </main>
     </div>

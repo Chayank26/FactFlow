@@ -1,6 +1,19 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 7 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 8 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 8 — Browser workflow checks and polish
+
+**New development tool:** @playwright/test is now a locked frontend dev dependency with a committed config and workflow suite. Real-browser assertions exercise event handling, navigation, layout, requests, and error recovery that the TypeScript build cannot verify. Component-only tests would be lighter but would not cover the assembled browser workflow. No runtime dependency or database schema was introduced.
+
+**Deterministic isolation:** Playwright intercepts the fixed test API URL and supplies per-test response state. The test server uses port 5189, refuses to reuse another server, and overrides VITE_API_BASE_URL so local configuration cannot silently redirect tests. The browser suite does not prove the live frontend/backend contract or PDF parsing; existing isolated pytest tests cover the real backend. A full integration environment would require isolated backend startup and fixtures and remains a separate extension.
+
+**Browser choice:** default runs use Playwright Chromium; PLAYWRIGHT_CHANNEL=chrome supports installed Google Chrome. Verification used installed Chrome at desktop and mobile viewport sizes, not device emulation or multiple engines. Retained traces aid failures and are Git-ignored. The simulated outage remains active until explicit recovery, accommodating React StrictMode's development effect replay without weakening assertions.
+
+**Retained tools and fixes:** React/fetch, native file inputs, existing CSS, FastAPI, SQLite, and pytest remain. The health fallback now matches port 8019. Upload inputs disable while busy and retain their element reference for asynchronous reset. Static UI wording now describes available functionality.
+
+**Verification:** eight browser checks, 33 backend tests, frontend build, and whitespace checks pass. Existing dependency deprecation and runner color-environment warnings remain non-blocking. README records commands, browser installation, isolation, and scope.
+
 
 ## Part 4 Phase 7 — Comparison reliability and wording
 

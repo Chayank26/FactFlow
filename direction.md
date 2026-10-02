@@ -1,6 +1,19 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 7 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 8 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 8 — Browser workflow checks and polish
+
+Added a repository-owned Playwright suite and npm test:e2e command so the core browser workflows can be rerun after changes. Four scenarios run at desktop and mobile widths: upload/document lifecycle/evidence pagination, Facts search/filter/navigation, comparison filters/evidence, and failures/recovery. The suite intercepts API calls and uses a dedicated test server on port 5189, leaving local application storage untouched. Real API/extraction/storage tests remain in pytest.
+
+Replaced obsolete Coming soon, future-upload, Getting started, and HOW IT WILL WORK copy with descriptions of current behavior. Fixed the health indicator's fallback API port from 8018 to 8019. Upload inputs now disable while a request is active and retain their DOM reference for cleanup after the asynchronous request. Added ignored browser artifacts and documented installation, test commands, and coverage boundaries in README.
+
+Verification: all eight browser checks pass using installed Chrome at 1280x800 and 390x844; all 33 backend tests and the frontend production build pass; git diff --check passes. The first browser run exposed a fixture issue: a one-request simulated health outage was consumed by React development-mode effect replay. Persistent failure state until explicit recovery fixed the simulation, after which the complete suite passed. Existing backend deprecation and browser-runner color-environment warnings are non-blocking.
+
+Suggested commit message: `test: add browser workflow coverage and polish current UI`
+
+Phase 9 documentation reconciliation remains planned. No git commit was created.
+
 
 ## Part 4 Phase 7 — Comparison reliability and wording
 
@@ -35,7 +48,7 @@ Continue in small, reviewable phases. After each checkpoint passes, update direc
 - **Phase 5 — Isolate backend tests (complete):** prevent regression runs from writing to local application data. Checkpoint: full backend suite, frontend build, and unchanged runtime files.
 - **Phase 6 — Finish pagination integration (complete):** make every document-detail fact accessible, add deterministic fact ordering, and verify navigation beyond the first result page.
 - **Phase 7 — Improve comparison reliability (complete):** cover misleading token matches with regression examples and align classification and UI wording with what the heuristic can establish.
-- **Phase 8 — Browser workflow checks and polish (planned):** add repeatable browser checks for upload, evidence browsing, pagination, reprocess/delete, filters, and errors; remove obsolete future-feature labels.
+- **Phase 8 — Browser workflow checks and polish (complete):** add repeatable browser checks for upload, evidence browsing, pagination, reprocess/delete, filters, and errors; remove obsolete future-feature labels.
 - **Phase 9 — Documentation reconciliation (planned):** synchronize operational guidance and current-state descriptions with verified behavior and record the next milestone. OCR remains future work with its own processor and dependency decisions.
 
 ## Part 4 Phase 5 — Isolated backend test storage

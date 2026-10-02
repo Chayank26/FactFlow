@@ -1,6 +1,17 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 4 Phase 7 complete. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 4 Phase 8 complete. Current local ports: frontend 5179, API 8019.
+
+## Part 4 Phase 8 — Browser workflow checks and polish
+
+**Current user journey:** upload a text-based PDF → inspect paginated document evidence → search/filter Facts → compare source passages using Matching wording/Possible difference → reprocess or delete documents as needed. Empty states now direct users to available upload functionality; working Facts and Comparisons no longer say Coming soon. Upload controls disable during submission. The health indicator and feature requests default to the same API port, 8019; the frontend remains on 5179.
+
+**Verification flow:** npm run test:e2e → Playwright starts a dedicated Vite server on 5189 → real browser interacts with the UI at desktop/mobile sizes → intercepted requests receive controlled success/failure responses → assertions verify visible state and outgoing filters/actions. Each test owns its simulated documents and failures. No local PDFs or database are used. Pytest separately tests actual PDF parsing, SQLite storage, and API routes.
+
+**Verified browser behavior:** upload, four evidence pages and boundaries, reprocess shrink recovery, cancel/confirm deletion, fact filters/search/no-match state, comparison labels/source passages, hash navigation with Back/reload, health/evidence retry, list errors, document switching, and mobile overflow in the Facts view. Eight checks pass along with 33 backend tests and the frontend build.
+
+**Working versus planned:** repeatable browser workflow coverage and UI polish are complete. Live browser-to-backend integration, broader browser/device coverage, and a full accessibility audit are not established by this suite. Phase 9 documentation reconciliation and future OCR remain planned.
+
 
 ## Part 4 Phase 7 — Comparison reliability and wording
 

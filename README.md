@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 4 Phase 7 is complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. The remaining phased roadmap is recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 4 Phase 8 is complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. The remaining phased roadmap is recorded in direction.md.
 
 ## Run locally
 
@@ -41,7 +41,26 @@ npm run build
 
 Then open the website with both servers running. Upload a PDF, search and filter its extracted facts, inspect a document’s evidence using its Previous/Next controls (20 facts per page), reprocess or delete it, and open Comparisons to filter relationships by source and type. Check the connected indicator, each navigation item, browser Back and refresh. Stop the backend and refresh to see the offline message; restart it and select Retry connection.
 
-The backend suite covers upload, PDF extraction, evidence references, document lifecycle, comparison filters, and failure paths. Each test uses a fresh temporary database and upload directory; test collection also initializes storage outside the local app data directory. Running tests does not populate or modify your local document collection. The frontend build is a compile-time check; browser interaction coverage remains a future improvement. This is not a full accessibility audit.
+The backend suite covers upload, PDF extraction, evidence references, document lifecycle, comparison filters, and failure paths. Each test uses a fresh temporary database and upload directory; test collection also initializes storage outside the local app data directory. Running tests does not populate or modify your local document collection. The frontend build is a compile-time check. The Playwright suite below checks browser interactions with controlled API responses; it is not a live browser-to-backend integration test or a full accessibility audit.
+
+## Browser workflow checks
+
+From `frontend/`, after `npm ci`:
+
+```sh
+npx playwright install chromium
+npm run test:e2e
+```
+
+Alternatively, use installed Google Chrome without downloading Chromium:
+
+```sh
+PLAYWRIGHT_CHANNEL=chrome npm run test:e2e
+```
+
+Playwright starts and stops its own Vite server on port **5189** (the port must be free), uses a fixed API URL for interception, and runs four scenarios at desktop and mobile widths for eight checks. No backend server is needed: API responses are mocked, uploads use test bytes, and local documents are untouched. Backend pytest separately validates real PDF extraction and persistence.
+
+Coverage includes upload, evidence pagination, reprocess page recovery, cancel/confirm deletion, fact search/source filters, comparison filters and evidence, browser Back/reload, failure messages, health/evidence retry, and a mobile overflow check. Failed tests retain traces under ignored `frontend/test-results/`; inspect a trace with `npx playwright show-trace <trace.zip>`. Browser exceptions fail the test. This currently checks Chromium/Chrome at two viewport sizes, not every browser or device.
 
 ## Comparison limits
 
