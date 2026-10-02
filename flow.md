@@ -1,6 +1,17 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 4 complete through Phase 9. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 5 Phase 1 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 5 Phase 1 — Live integration checkpoint
+
+**Current user flow remains:** upload a text PDF → extract/store claims → browse paginated source evidence or search Facts → compare sources → reprocess/delete documents. This phase adds verification, not a new user-facing feature. Failed reprocessing can still leave previous facts visible; Phase 2 will address clarity around that state.
+
+**New test data flow:** npm run test:integration → temporary storage created before backend app import → FastAPI on 8029 with test-only CORS → Vite on 5190 → browser uploads valid generated PDFs → real pypdf/SQLite/filesystem → browser evidence/search/comparison actions → reprocess replaces IDs → delete removes rows/files. No API interception is used. Playwright shuts servers down and the Python temporary-directory context cleans storage on graceful exit.
+
+**Verification:** one real desktop workflow passes, including 25-fact pagination, source/search filtering, agreement evidence, reprocessing, and deletion. All 33 backend tests and frontend build pass. The eight mocked desktop/mobile checks remain separate coverage and were not rerun here. Temporary test state never uses backend/data; forced termination may leave temporary files for manual cleanup.
+
+**Remaining work:** Part 5 Phase 2 (failed reprocessing/count clarity) and Phase 3 (original-source inspection) are planned. OCR and larger-scale/evaluated matching remain proposed later parts.
+
 
 ## Part 4 Phase 9 — Current end-to-end state
 

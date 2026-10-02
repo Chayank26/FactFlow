@@ -1,6 +1,19 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 4 complete through Phase 9. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 5 Phase 1 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 5 Phase 1 — Real browser/API integration
+
+Part 5 has three planned phases. Phase 1 is complete: added a separate Playwright integration configuration, real PDF workflow test, and Python backend launcher. A temporary directory is selected before app import, so even initialization cannot touch normal storage. Dedicated ports 5190/8029 and refusal to reuse servers prevent accidental tests against an existing app. Test-only CORS allows the real cross-origin browser request without changing application defaults.
+
+The workflow uploads two generated PDFs, verifies processed status and stored files, traverses evidence beyond the first page, searches facts by source, checks a matching comparison with both filenames, reprocesses and verifies replacement fact IDs, then deletes documents and verifies empty API collections and removed PDFs. This closes the live browser/API contract gap left by the mocked suite.
+
+Verification: the new integration workflow passed in installed Chrome (one desktop test); all 33 backend tests and the frontend build passed. Backend shutdown completed normally after the browser run. git diff --check passes. The unchanged eight-check mocked suite was not rerun in this phase. Existing dependency/color-environment warnings remain non-blocking. No new dependency or production behavior change was introduced.
+
+Suggested commit message: `test: add isolated real browser and API integration workflow`
+
+Two Part 5 phases remain: Phase 2 clarifies failed reprocessing/retained evidence and count freshness; Phase 3 improves original-source inspection and provenance. No git commit was created.
+
 
 ## Part 4 Phase 9 — Documentation reconciliation
 
@@ -12,13 +25,13 @@ Suggested commit message: `docs: complete Part 4 documentation and outline next 
 
 Part 4 is complete. No git commit was created. Earlier phase entries remain historical snapshots; this entry and the current summaries supersede earlier planned/completed statements.
 
-## Proposed upcoming parts — not implemented
+## Roadmap — current status and proposed later parts
 
-These are a proposed sequence, not additional completed phases or a commitment to specific tools. Continue with one verified phase at a time, updating all three logs and providing a commit message after each checkpoint.
+Part 5 Phase 1 is now complete; its checkpoint is recorded above. Remaining phases are proposed, not completed or a commitment to specific tools. Continue with one verified phase at a time, updating all three logs and providing a commit message after each checkpoint.
 
 ### Part 5 — Real integration and evidence reliability
 
-1. Start an isolated backend for browser tests and run real PDF upload → extraction → evidence → comparisons → deletion. Checkpoint: repeatable full-stack workflow without touching local data.
+1. **Complete:** Start an isolated backend for browser tests and run real PDF upload → extraction → evidence → comparisons → deletion. Checkpoint: repeatable full-stack workflow without touching local data.
 2. Make failed reprocessing and retained evidence explicit in the UI, with regression coverage; clarify counts and freshness. Checkpoint: failure cannot silently present old evidence as newly processed.
 3. Improve source inspection and provenance, including direct access to the original PDF/page. Checkpoint: users can check each displayed claim against its source.
 

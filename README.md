@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 4 is complete through Phase 9.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. The proposed next parts are recorded in direction.md; they have not been implemented.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 5 Phase 1 is complete; Part 4 is complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. Part 5 has three phases; Phase 1 is complete and Phases 2–3 remain planned. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -73,6 +73,20 @@ Playwright starts and stops its own Vite server on port **5189** (the port must 
 
 Coverage includes upload, evidence pagination, reprocess page recovery, cancel/confirm deletion, fact search/source filters, comparison filters and evidence, browser Back/reload, failure messages, health/evidence retry, and a mobile overflow check. Failed tests retain traces under ignored `frontend/test-results/`; inspect a trace with `npx playwright show-trace <trace.zip>`. Browser exceptions fail the test. This currently checks Chromium/Chrome at two viewport sizes, not every browser or device.
 
+## Real browser/API integration check
+
+After installing the backend locked dependencies into `backend/.venv` and frontend dependencies/browser as above, run from `frontend/`:
+
+```sh
+npm run test:integration
+# Or use installed Google Chrome:
+PLAYWRIGHT_CHANNEL=chrome npm run test:integration
+```
+
+This separate suite starts a real FastAPI server on **8029** and Vite on **5190**, and refuses to reuse running servers; both ports must be free. The Python test launcher sets a new temporary data directory before importing the app and adds only the test frontend origin to its CORS middleware. Normal app configuration is unchanged. Playwright stops both servers, and graceful backend shutdown removes temporary storage. A forced process kill may leave a temporary directory behind, never the normal app database.
+
+The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, successful reprocessing, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop happy-path workflow; the separate eight-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
+
 ## Comparison limits
 
 Comparisons show **Matching wording** when claims match after normalizing case, whitespace, and final sentence punctuation. **Possible difference** means different wording shares at least two terms after removing common connecting words and meets a token-overlap threshold. Review both source passages: neither label establishes truth or proves a contradiction, and paraphrases or unrelated contexts can be misclassified. API filter values remain `agreement` and `difference`.
@@ -115,7 +129,9 @@ frontend/src/index.css         Responsive visual styling
 frontend/playwright.config.js  Isolated browser test server and viewports
 frontend/tests/                Mocked-API browser workflow checks
 backend/app/main.py            FastAPI API, SQLite storage, extraction, and comparisons
-backend/tests/                  Focused backend regression tests
+backend/tests/                  Backend tests and isolated browser API launcher
+frontend/integration/          Real browser/API workflow
+frontend/playwright.integration.config.js  Integration server lifecycle
 ```
 
 Original reference PDFs and ZIP remain untouched and are ignored by Git. Runtime SQLite data and uploaded files live under backend/data and are ignored by Git. No model service or credentials are needed for local development.

@@ -1,6 +1,17 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 4 complete through Phase 9. Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 5 Phase 1 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 5 Phase 1 — Isolated full-stack browser test
+
+**No new tool or dependency was needed.** Reused Playwright, installed Chrome, Python tempfile, Uvicorn, FastAPI CORS middleware, and the existing FACTFLOW_DATA_DIR setting. The separate integration config keeps real-server tests distinct from deterministic mocked browser tests.
+
+**Isolation/lifecycle:** the launcher creates TemporaryDirectory before importing app.main, overriding inherited storage settings so import-time initialization is isolated. Playwright owns both server processes, disallows reuse, and sends SIGTERM for graceful backend shutdown. The temporary context then cleans its database/uploads. Forced process termination can bypass cleanup. Ports 5190/8029 and a test-only origin isolate the run without broadening normal application CORS.
+
+**Coverage choices:** a single serial desktop workflow exercises real browser requests, CORS, valid PDF parsing, persistence, and cleanup. Additional direct API/filesystem assertions check facts are replaced during reprocessing and deleted with PDFs. Generated ASCII PDFs use proper stream lengths/xref offsets and avoid committing binary fixtures. Mocked mobile/failure tests remain valuable but cannot replace this real contract check. This workflow is not broad OCR/layout/production coverage.
+
+**Verification:** one installed-Chrome integration test, 33 backend tests, frontend build, and whitespace checks pass. The backend shutdown log confirms normal exit. No production code, schema, or dependency changed; Phase 2/3 will address lifecycle presentation and source inspection.
+
 
 ## Part 4 Phase 9 — Documentation and next technical decisions
 
