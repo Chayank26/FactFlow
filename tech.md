@@ -1,6 +1,17 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 5 Phase 1 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 5 Phase 2 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 5 Phase 2 — Lifecycle presentation without new persistence
+
+**No new tool or dependency was needed.** Reused React state, fetch/AbortController, existing document status and fact endpoints, pytest, and Playwright. The backend keeps previous facts on extraction failure and replaces them only after successful extraction; this behavior now has a focused backend regression and user-facing explanation.
+
+**Status handling:** a failed reprocess triggers metadata refresh. Existing per-view document lists provide status for fact/comparison evidence without adding status fields to every API response. Loading/missing status is explicit. This avoids a schema/API migration, but status is a snapshot and can change externally until the next fetch. Full processing history or evidence-generation timestamps are not introduced.
+
+**Count semantics:** active-view filtered counts avoid presenting cached values as global totals without adding an expensive global comparison-count endpoint. Unknown/loading/failed/inactive counts use a dash, successful empty results use zero. Aborted document/comparison response and finalizer guards prevent obsolete requests from replacing active state.
+
+**Verification:** 34 backend tests, eight mocked desktop/mobile checks, one real browser/API lifecycle test, frontend build, and whitespace checks pass. Real integration covers temporary PDF corruption, retained evidence warnings, restored bytes, and successful retry; mocked tests check zero/unavailable semantics. Navigation helpers wait for the destination heading before acting to avoid selecting the previous view's similarly named controls. Expected parser diagnostics during deliberate corruption are not application exceptions.
+
 
 ## Part 5 Phase 1 — Isolated full-stack browser test
 

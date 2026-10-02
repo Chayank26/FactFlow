@@ -1,17 +1,17 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 5 Phase 1 is complete; Part 4 is complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. Part 5 has three phases; Phase 1 is complete and Phases 2–3 remain planned. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 5 Phase 2 is complete; Part 4 is complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. OCR for image-only PDFs remains planned. Part 5 has three phases; Phases 1–2 are complete and Phase 3 remains planned. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
 - **Documents:** upload PDFs with a `.pdf` filename and `application/pdf` MIME type, up to 10 MB; inspect, reprocess, or delete them. Filenames are sanitized and limited to 120 characters. Extension/MIME checks do not prove valid PDF content; parsing decides whether extraction succeeds.
 - **Extraction:** local `pypdf` text extraction, sentence splitting, noise filtering, and document-level deduplication. Facts retain document ID, page number, and the extracted claim as source text. This is not a full surrounding passage or an independent truth check. Image-only PDFs need future OCR.
-- **Status:** a stored upload becomes `processed` only when at least one fact is retained; otherwise it remains stored as `extraction_failed`. Successful reprocessing replaces facts and their IDs. Failed reprocessing marks the document failed but preserves previous facts, which can still appear in Facts and Comparisons.
+- **Status:** a stored upload becomes `processed` only when at least one fact is retained; otherwise it remains stored as `extraction_failed`. Successful reprocessing replaces facts and their IDs. Failed reprocessing marks the document failed but preserves previous facts, which remain visible with an earlier-run warning in document details, Facts, and Comparisons. Failed reprocessing refreshes the document status; a successful retry clears the warning. If status cannot be fetched, the UI reports uncertainty.
 - **Facts:** server-side source filtering and SQL `LIKE` search over claim/source text. Browser pages contain 20 facts; API pages default to 50 and allow 1–100. Responses contain `items`, `total`, `limit`, and `offset`. Search uses SQL wildcard semantics (`%` and `_`), not full-text or semantic search.
 - **Comparisons:** derived across documents on each request, using the heuristic described below. Document and comparison lists remain unpaginated; comparison work grows quadratically with the number of facts.
 - **Local scope:** no accounts, authentication, background job queue, OCR, model calls, or public deployment setup. Extraction runs during upload/reprocess requests. The upload-size check currently occurs after reading the full upload into memory.
 
-Navigation uses URL hashes; filters and selected-document state live in browser memory. Summary cards reflect loaded view data and filters, not an independently refreshed global metrics endpoint. Fact ordering is stable for unchanged records, but offset pages can shift when records change, and reprocessing changes IDs.
+Navigation uses URL hashes; filters and selected-document state live in browser memory. Facts and Comparisons summary cards show results for current filters only in their active view. Inactive/loading/failed views show a dash, and successful empty results show zero. The Documents count is the latest loaded collection size; these are request-time snapshots, not live global metrics. Fact ordering is stable for unchanged records, but offset pages can shift when records change, and reprocessing changes IDs.
 
 ## Run locally
 
@@ -85,7 +85,7 @@ PLAYWRIGHT_CHANNEL=chrome npm run test:integration
 
 This separate suite starts a real FastAPI server on **8029** and Vite on **5190**, and refuses to reuse running servers; both ports must be free. The Python test launcher sets a new temporary data directory before importing the app and adds only the test frontend origin to its CORS middleware. Normal app configuration is unchanged. Playwright stops both servers, and graceful backend shutdown removes temporary storage. A forced process kill may leave a temporary directory behind, never the normal app database.
 
-The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, successful reprocessing, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop happy-path workflow; the separate eight-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
+The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop lifecycle workflow including extraction failure/recovery; the separate eight-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
 
 ## Comparison limits
 

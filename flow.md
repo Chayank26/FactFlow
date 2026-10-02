@@ -1,6 +1,17 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 5 Phase 1 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 5 Phase 2 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 5 Phase 2 — Failure visibility and scoped counts
+
+**Updated journey:** reprocess a document → if extraction fails, preserve its earlier facts and refresh document status → display an earlier-run warning in document details, Facts, and the relevant comparison source → retry successfully to replace facts and clear the warning. A failed document with no facts displays a no-evidence message. If status retrieval fails, the UI says freshness could not be confirmed instead of implying success.
+
+**Data flow:** failed POST /documents/{id}/process → GET /documents/{id} → document list/selection state update → detail facts reload. Facts/comparisons use their existing document list to associate processing status with each source. The preservation policy and API schema are unchanged. Navigation reloads view data; canceled document/comparison loads no longer overwrite active request state.
+
+**Counts:** Documents shows its latest loaded collection size unless loading/failed. Facts/Comparisons show current-filter totals only while their view is active and loaded successfully; other states show a dash. Zero means a successful empty result. Counts/status remain request-time snapshots, not continuously monitored data.
+
+**Verification:** 34 backend tests, eight mocked browser checks, real failure/recovery integration, frontend build, and whitespace checks pass. The damaged PDF exists only in isolated integration storage. Part 5 Phase 3 source inspection remains planned; OCR and scale/evaluation remain proposed later parts.
+
 
 ## Part 5 Phase 1 — Live integration checkpoint
 

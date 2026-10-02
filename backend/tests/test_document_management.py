@@ -40,3 +40,23 @@ def test_upload_validation_rejects_non_pdf_files():
     )
 
     assert response.status_code == 415, response.text
+
+
+def test_failed_reprocessing_preserves_evidence_until_successful_retry():
+    from pathlib import Path
+
+    document = upload_pdf()
+    document_id = document['id']
+    path = Path(document['stored_path'])
+    original_bytes = path.read_bytes()
+    before = client.get('/facts', params={'document_id': document_id}).json()
+    path.write_bytes(b'broken PDF')
+    assert client.post(f'/documents/{document_id}/process').status_code == 422
+    assert client.get(f'/documents/{document_id}').json()['status'] == 'extraction_failed'
+    assert client.get('/facts', params={'document_id': document_id}).json() == before
+    path.write_bytes(original_bytes)
+    assert client.post(f'/documents/{document_id}/process').json()['status'] == 'processed'
+    after = client.get('/facts', params={'document_id': document_id}).json()
+    assert after['total'] == before['total']
+    assert after['items'][0]['claim'] == before['items'][0]['claim']
+    assert after['items'][0]['id'] != before['items'][0]['id']

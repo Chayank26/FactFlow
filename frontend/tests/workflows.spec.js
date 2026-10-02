@@ -39,7 +39,10 @@ async function setup(page, { empty = false } = {}) {
   return state
 }
 
-const navigate = (page, name) => page.getByRole('navigation', { name: 'Workspace' }).getByRole('link', { name, exact: true }).click()
+const navigate = async (page, name) => {
+  await page.getByRole('navigation', { name: 'Workspace' }).getByRole('link', { name, exact: true }).click()
+  await expect(page.getByRole('heading', { name, exact: true })).toBeVisible()
+}
 
 test('upload, paginate evidence, reprocess, and cancel/confirm deletion', async ({ page }) => {
   const state = await setup(page, { empty: true })
@@ -81,6 +84,8 @@ test('facts paginate, filters reset the page, and navigation survives reload/bac
   await expect(page.getByText('Showing 1–1 of 1')).toBeVisible()
   await page.getByRole('textbox', { name: 'Search' }).fill('missing')
   await expect(page.getByText('No matching facts.')).toBeVisible()
+  await expect(page.locator('.stat-card').filter({ hasText: 'Facts' }).locator('.stat-number')).toHaveText('0')
+  await expect(page.locator('.stat-card').filter({ hasText: 'Facts' })).toContainText('Results for current filters')
   expect(state.requests.some(request => request.query.get('search') === 'missing' && request.query.get('document_id') === 'beta' && request.query.get('offset') === '0')).toBe(true)
   await page.getByRole('textbox', { name: 'Search' }).fill('')
   await expect(page.getByText('Showing 1–1 of 1')).toBeVisible()
@@ -130,6 +135,7 @@ test('health, upload, evidence, and list failures are visible and recoverable', 
     state.fail = path
     await navigate(page, view)
     await expect(page.getByRole('alert')).toBeVisible()
+    await expect(page.locator('.stat-card').filter({ hasText: view }).locator('.stat-number')).toHaveText('—')
   }
   state.fail = ''
   await navigate(page, 'Facts')

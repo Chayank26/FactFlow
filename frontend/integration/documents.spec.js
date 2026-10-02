@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 
 function pdf(text) {
   const stream = `BT /F1 12 Tf 72 720 Td (${text}) Tj ET`
@@ -22,7 +22,10 @@ function pdf(text) {
 }
 
 const api = 'http://127.0.0.1:8029'
-const navigate = (page, name) => page.getByRole('navigation', { name: 'Workspace' }).getByRole('link', { name, exact: true }).click()
+const navigate = async (page, name) => {
+  await page.getByRole('navigation', { name: 'Workspace' }).getByRole('link', { name, exact: true }).click()
+  await expect(page.getByRole('heading', { name, exact: true })).toBeVisible()
+}
 
 test('real PDF upload, extraction, pagination, comparison, reprocess, and deletion', async ({ page, request }) => {
   const errors = []
@@ -65,10 +68,30 @@ test('real PDF upload, extraction, pagination, comparison, reprocess, and deleti
   await expect(page.locator('.comparison-card')).toContainText('first.pdf')
   await expect(page.locator('.comparison-card')).toContainText('second.pdf')
   await navigate(page, 'Documents')
+  await page.getByRole('button', { name: 'View first.pdf', exact: true }).click()
+  await expect(detail.getByText('Showing 1–20 of 25')).toBeVisible()
+  const originalBytes = readFileSync(first.stored_path)
+  writeFileSync(first.stored_path, 'broken PDF')
+  const failed = page.waitForResponse(response => response.url().endsWith(`/documents/${first.id}/process`))
+  await page.getByRole('button', { name: 'Reprocess first.pdf', exact: true }).click()
+  expect((await failed).status()).toBe(422)
+  const retainedMessage = 'Latest extraction failed. This evidence is retained from an earlier successful run.'
+  await expect(detail.getByText(retainedMessage)).toBeVisible()
+  await expect(detail.getByText('extraction_failed', { exact: true })).toBeVisible()
+  await navigate(page, 'Facts')
+  await expect(page.getByText(retainedMessage)).toBeVisible()
+  await expect(page.locator('.stat-card').filter({ hasText: 'Facts' }).locator('.stat-number')).toHaveText('1')
+  await navigate(page, 'Comparisons')
+  await expect(page.getByText(retainedMessage)).toBeVisible()
+  await navigate(page, 'Documents')
+  await expect(page.locator('.stat-card').filter({ hasText: 'Facts' }).locator('.stat-number')).toHaveText('—')
+  writeFileSync(first.stored_path, originalBytes)
   const before = await (await request.get(`${api}/facts?document_id=${first.id}`)).json()
   const processed = page.waitForResponse(response => response.url().endsWith(`/documents/${first.id}/process`))
   await page.getByRole('button', { name: 'Reprocess first.pdf', exact: true }).click()
   expect((await processed).ok()).toBe(true)
+  await expect(detail.getByText('processed', { exact: true })).toBeVisible()
+  await expect(detail.getByText(retainedMessage)).toHaveCount(0)
   const after = await (await request.get(`${api}/facts?document_id=${first.id}`)).json()
   expect(after.total).toBe(25)
   expect(after.items.some(item => before.items.some(old => old.id === item.id))).toBe(false)

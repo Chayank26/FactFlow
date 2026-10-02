@@ -113,7 +113,7 @@ export default function App() {
       .then(async response => {
         if (!response.ok) throw new Error('Could not load documents')
         const data = await response.json() as DocumentRecord[]
-        setDocuments(Array.isArray(data) ? data : [])
+        if (!controller.signal.aborted) setDocuments(Array.isArray(data) ? data : [])
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -122,7 +122,7 @@ export default function App() {
         }
       })
       .finally(() => {
-        setLoadingDocuments(false)
+        if (!controller.signal.aborted) setLoadingDocuments(false)
       })
 
     return () => controller.abort()
@@ -176,7 +176,7 @@ export default function App() {
       .then(async response => {
         if (!response.ok) throw new Error('Could not load comparisons')
         const data = await response.json() as ComparisonRecord[]
-        setComparisons(Array.isArray(data) ? data : [])
+        if (!controller.signal.aborted) setComparisons(Array.isArray(data) ? data : [])
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -185,7 +185,7 @@ export default function App() {
         }
       })
       .finally(() => {
-        setLoadingComparisons(false)
+        if (!controller.signal.aborted) setLoadingComparisons(false)
       })
 
     return () => controller.abort()
@@ -274,7 +274,16 @@ export default function App() {
       setDocuments(current => current.map(item => item.id === updated.id ? updated : item))
       setSelectedDocument(current => current?.id === updated.id ? updated : current)
     } catch {
-      setManagementError('The document could not be reprocessed.')
+      setManagementError('Reprocessing failed. Previously extracted evidence, if any, has been retained.')
+      try {
+        const refreshed = await fetch(`${apiBase}/documents/${document.id}`)
+        if (!refreshed.ok) throw new Error('Status unavailable')
+        const updated = await refreshed.json() as DocumentRecord
+        setDocuments(current => current.map(item => item.id === updated.id ? updated : item))
+        setSelectedDocument(current => current?.id === updated.id ? updated : current)
+      } catch {
+        setManagementError('Reprocessing could not be confirmed and document status could not be refreshed. Displayed evidence may be from an earlier run. Reload to check its status.')
+      }
     }
   }
 
@@ -289,6 +298,15 @@ export default function App() {
     } catch {
       setManagementError('The document could not be deleted.')
     }
+  }
+
+  const evidenceWarning = (documentId: string) => {
+    if (loadingDocuments) return 'Checking source processing status…'
+    const source = documents.find(document => document.id === documentId)
+    if (documentsError || !source) return 'Source processing status is unavailable; evidence freshness could not be confirmed.'
+    return source.status === 'extraction_failed'
+      ? 'Latest extraction failed. This evidence is retained from an earlier successful run.'
+      : null
   }
 
   const section = sections[view]
@@ -317,7 +335,7 @@ export default function App() {
         <section className="intro-card" aria-labelledby="intro-title"><div className="intro-copy"><span className="intro-label"><Sparkles size={14} /> CONNECT THE DOTS</span><h2 id="intro-title">From scattered pages<br />to a clearer picture.</h2><p>Bring your sources together. Discover the facts.<br className="desktop-break" /> Understand the story between them.</p><a href="#comparisons" className="intro-link">Explore comparisons <ArrowRight size={16} /></a></div><div className="source-art" aria-hidden="true"><div className="art-orbit" /><div className="art-line line-one" /><div className="art-line line-two" /><div className="art-paper paper-one"><FileText size={24} /><i /><i /><i /></div><div className="art-center"><Waypoints size={32} /></div><div className="art-paper paper-two"><span className="art-check"><Check size={17} /></span><i /><i /><i /></div><span className="art-spark spark-one" /><span className="art-spark spark-two" /></div></section>
 
         <div className="stats-grid">
-          {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description:'Grounded in evidence',icon:Search},{key:'comparisons',label:'Comparisons',description:'Connections across sources',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? documents.length : item.key === 'facts' ? factTotal : comparisons.length || '—'}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
+          {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description: view === 'facts' ? 'Results for current filters' : 'Open Facts to load count',icon:Search},{key:'comparisons',label:'Comparisons',description: view === 'comparisons' ? 'Results for current filters' : 'Open Comparisons to load count',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? (loadingDocuments || documentsError ? '—' : documents.length) : item.key === 'facts' ? (view === 'facts' && !loadingFacts && !factsError ? factTotal : '—') : (view === 'comparisons' && !loadingComparisons && !comparisonsError ? comparisons.length : '—')}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
         </div>
 
         <section className="collection" aria-labelledby="collection-title"><div className="collection-heading"><div><h2 id="collection-title">{view === 'documents' ? 'Your documents' : view === 'facts' ? 'Your facts' : 'Your comparisons'}</h2><span>{view === 'documents' ? 'A home for your source material' : view === 'facts' ? 'Search claims and source passages' : 'Review relationships between sources'}</span></div><span className="coming-label">Live data</span></div>
@@ -372,7 +390,7 @@ export default function App() {
                   ))}
                 </div>
               )}
-              {managementError && <div className="error-text management-error">{managementError}</div>}
+              {managementError && <div className="error-text management-error" role="alert">{managementError}</div>}
               {selectedDocument && <section className="document-detail" aria-labelledby="document-detail-title">
                 <div className="detail-heading">
                   <div><span className="eyebrow">DOCUMENT DETAIL</span><h3 id="document-detail-title">{selectedDocument.filename}</h3></div>
@@ -380,6 +398,7 @@ export default function App() {
                 </div>
                 {loadingDetails ? <div className="document-loading">Loading evidence…</div> : detailsError ? <div className="error-panel" role="alert">{detailsError} <button onClick={() => setSelectedDocument(current => current ? { ...current } : null)}>Retry evidence</button></div> : <>
                   <div className="detail-meta"><span>{formatBytes(selectedDocument.size_bytes)}</span><span>{selectedDocument.status}</span><span>{formatDate(selectedDocument.created_at)}</span></div>
+                  {selectedDocument.status === 'extraction_failed' && <p className="error-text" role="status">{detailTotal > 0 ? 'Latest extraction failed. This evidence is retained from an earlier successful run.' : 'Latest extraction failed. No extracted evidence is available.'}</p>}
                   {selectedFacts.length === 0 ? <p className="detail-empty">No extracted facts are stored for this document.</p> : <div className="fact-list">
                     {selectedFacts.map(fact => <article className="fact-row" key={fact.id}><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span></article>)}
                   </div>}
@@ -414,7 +433,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="fact-browser-list">
-                    {facts.map(fact => <article className="fact-browser-card" key={fact.id}><div className="fact-browser-icon"><Search size={16} /></div><div><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span></div></article>)}
+                    {facts.map(fact => <article className="fact-browser-card" key={fact.id}><div className="fact-browser-icon"><Search size={16} /></div><div><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text}</span>{evidenceWarning(fact.document_id) && <p className="error-text" role="status">{evidenceWarning(fact.document_id)}</p>}</div></article>)}
                     <div className="fact-pagination"><span>Showing {factOffset + 1}–{Math.min(factOffset + facts.length, factTotal)} of {factTotal}</span><div><button disabled={factOffset === 0} onClick={() => setFactOffset(offset => Math.max(0, offset - factLimit))}>Previous</button><button disabled={factOffset + factLimit >= factTotal} onClick={() => setFactOffset(offset => offset + factLimit)}>Next</button></div></div>
                   </div>
                 )
@@ -460,13 +479,13 @@ export default function App() {
                       <div className="comparison-sources">
                         <div className="comparison-source">
                           <strong>{comparison.left_document_name}</strong>
-                          <p>{comparison.left_claim}</p>
+                          <p>{comparison.left_claim}</p>{evidenceWarning(comparison.left_document_id) && <p className="error-text" role="status">{evidenceWarning(comparison.left_document_id)}</p>}
                           <span>Page {comparison.left_page} · {comparison.left_source_text}</span>
                         </div>
                         <div className="comparison-divider" aria-hidden="true"><GitCompareArrows size={16} /></div>
                         <div className="comparison-source">
                           <strong>{comparison.right_document_name}</strong>
-                          <p>{comparison.right_claim}</p>
+                          <p>{comparison.right_claim}</p>{evidenceWarning(comparison.right_document_id) && <p className="error-text" role="status">{evidenceWarning(comparison.right_document_id)}</p>}
                           <span>Page {comparison.right_page} · {comparison.right_source_text}</span>
                         </div>
                       </div>

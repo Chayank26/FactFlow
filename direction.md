@@ -1,6 +1,19 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 5 Phase 1 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 5 Phase 2 complete (Part 4 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 5 Phase 2 — Retained evidence and count clarity
+
+Failed reprocessing now refreshes document metadata and the selected detail view. Document evidence, Facts, and both sides of Comparisons label evidence retained from an earlier successful run when the latest extraction failed. Status-fetch failures report uncertainty; textless failed documents say no evidence is available. Successful retries clear the failed status and its warning. The backend preservation policy remains unchanged.
+
+Facts and Comparisons summary cards now show current-filter results only in the active view, with explanatory labels. Inactive/loading/failed views show a dash; successful empty responses show zero. Document/comparison fetches now guard against aborted response/finalizer updates. This phase follows real integration setup so the failure-and-recovery lifecycle can be exercised end to end.
+
+Verification: 34 backend tests, eight mocked desktop/mobile browser checks, the real integration workflow, frontend build, and git diff --check pass. The integration test corrupts only a temporary fixture PDF, verifies warnings in Documents/Facts/Comparisons, restores the PDF, and verifies successful reprocessing. A backend regression proves old facts survive failure and are replaced on success. Browser checks assert zero versus unavailable counts. Integration testing exposed a test-navigation race; helpers now wait for the destination heading before selecting its controls. Existing dependency/color warnings and expected parser diagnostics for the damaged fixture remain.
+
+Suggested commit message: `fix: clarify retained evidence after failed reprocessing and scope counts`
+
+Part 5 Phase 3 (original-source inspection and provenance) is the only remaining phase. No git commit was created.
+
 
 ## Part 5 Phase 1 — Real browser/API integration
 
@@ -27,12 +40,12 @@ Part 4 is complete. No git commit was created. Earlier phase entries remain hist
 
 ## Roadmap — current status and proposed later parts
 
-Part 5 Phase 1 is now complete; its checkpoint is recorded above. Remaining phases are proposed, not completed or a commitment to specific tools. Continue with one verified phase at a time, updating all three logs and providing a commit message after each checkpoint.
+Part 5 Phases 1–2 are complete; their checkpoints are recorded above. Remaining phases are proposed, not completed or a commitment to specific tools. Continue with one verified phase at a time, updating all three logs and providing a commit message after each checkpoint.
 
 ### Part 5 — Real integration and evidence reliability
 
 1. **Complete:** Start an isolated backend for browser tests and run real PDF upload → extraction → evidence → comparisons → deletion. Checkpoint: repeatable full-stack workflow without touching local data.
-2. Make failed reprocessing and retained evidence explicit in the UI, with regression coverage; clarify counts and freshness. Checkpoint: failure cannot silently present old evidence as newly processed.
+2. **Complete:** Make failed reprocessing and retained evidence explicit in the UI, with regression coverage; clarify counts and freshness. Checkpoint: failure cannot silently present old evidence as newly processed.
 3. Improve source inspection and provenance, including direct access to the original PDF/page. Checkpoint: users can check each displayed claim against its source.
 
 ### Part 6 — Scanned PDF support
