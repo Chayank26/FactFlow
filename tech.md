@@ -1,6 +1,16 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 7 Phase 2 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 7 complete (all three phases) (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+
+
+
+## Part 7 Phase 3 — Operational scope and recovery tools
+
+**No new tool or dependency was needed.** Retained local FastAPI/Uvicorn, Vite, SQLite, filesystem source storage, and Tesseract. Documented configuration and process/data boundaries in docs/operations.md. A one-off Python standard-library tarfile/temporary-directory drill plus existing TestClient verified a consistent idle backup and same-path restore without touching local data.
+
+**Decision/trade-offs:** retain loopback single-user operation. Hosting infrastructure, identity, queues, and managed storage add requirements that current usage does not establish. Absolute stored PDF paths prevent portable restore; copying only SQLite omits originals. Live backups and crash-consistent multi-resource snapshots are not implemented. The proposed next part addresses portability and tested recovery before reconsidering deployment. Corrected Git-ignore guidance: ignored new files coexist with legacy tracked runtime files; no automatic untracking or history rewrite was performed.
+
+**Verification:** 61 backend tests pass; recovery preserves schema 2, SQLite integrity, facts and original bytes, with working reprocessing and deletion afterward. Documentation links and whitespace checks pass. No frontend rerun for this documentation-only phase; previous browser/build results are explicitly historical. Part 7 is complete; no deployment or new runtime configuration was applied.
 
 
 ## Part 7 Phase 2 — Dependency-free comparison evaluation

@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 7 Phase 2 is complete; Parts 4, 5, and 6 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 7 is complete; Parts 4, 5, and 6 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -132,7 +132,7 @@ Comparisons show **Matching wording** when claims match after normalizing case, 
 
 ## Local database maintenance
 
-The development database defaults to `backend/data/factlayer.db` and PDFs live in `backend/data/uploads/`; both are ignored by Git. Set `FACTFLOW_DATA_DIR` before starting the backend to use an alternative storage directory. The commands below assume the default location and are run from the project root.
+The development database defaults to `backend/data/factlayer.db` and PDFs live in `backend/data/uploads/`; new files are ignored by Git, but a legacy database and five sample text uploads remain tracked. See the [operations runbook](docs/operations.md#repository-data-caveat). Set `FACTFLOW_DATA_DIR` before starting the backend to use an alternative storage directory. The commands below assume the default location and are run from the project root.
 
 Stop the backend before backing up so metadata and files describe the same state. Back up the **whole data directory**, not just SQLite:
 
@@ -175,8 +175,8 @@ frontend/integration/          Real browser/API workflow
 frontend/playwright.integration.config.js  Integration server lifecycle
 ```
 
-Original reference PDFs and ZIP remain untouched and are ignored by Git. Runtime SQLite data and uploaded files live under backend/data and are ignored by Git. No model service or credentials are needed for local development.
+Original reference PDFs and ZIP remain untouched and are ignored by Git. Runtime SQLite data and uploaded files default to backend/data; new files are ignored, but legacy tracked artifacts remain (see the operations runbook). No model service or credentials are needed for local development.
 
 ## Comparison quality evaluation
 
-A reproducible evaluation covers 48 synthetic labeled evidence pairs. The selected candidate removed one false match on a 24-pair holdout, but the production threshold remains 0.5: this small authored dataset does not establish real-world accuracy. Comparisons can miss paraphrases and negation/context relationships or surface unrelated wording overlaps. See the [rubric, results, limitations, and reproduction commands](docs/comparison-quality.md) and [raw report](docs/comparison-evaluation.json). Part 7 Phase 3 remains operational reconciliation and deployment scope.
+A reproducible evaluation covers 48 synthetic labeled evidence pairs. The selected candidate removed one false match on a 24-pair holdout, but the production threshold remains 0.5: this small authored dataset does not establish real-world accuracy. Comparisons can miss paraphrases and negation/context relationships or surface unrelated wording overlaps. See the [rubric, results, limitations, and reproduction commands](docs/comparison-quality.md) and [raw report](docs/comparison-evaluation.json). Part 7 is complete; local single-user scope is retained. See the [operations runbook and recovery checkpoint](docs/operations.md) for configuration, troubleshooting, backup/restore, and the proposed next part.

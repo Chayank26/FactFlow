@@ -1,6 +1,16 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 7 Phase 2 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 7 complete (all three phases) (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+
+
+
+## Part 7 Phase 3 — Local operations and recovery
+
+**Current journey:** start the loopback API/browser → upload native/scanned PDFs → inspect facts and original PDFs → browse/filter paginated comparisons → manually review evidence. Processing failures preserve earlier facts with warnings. Production comparison threshold remains 0.5; no new user-facing feature or endpoint was introduced.
+
+**Operational flow:** choose FACTFLOW_DATA_DIR before API startup → schema initialization → requests persist metadata/facts plus source files. For backup, stop processing/API → archive the entire configured directory → restore to the same absolute path → verify metadata and source bytes before resuming. Path relocation is not supported; health reports process responsiveness, not storage/OCR readiness. README and docs/operations.md now distinguish ignored new files from legacy tracked runtime artifacts.
+
+**Checkpoint:** 61 backend tests and an isolated backup/restore/reprocess/delete drill pass; live collection untouched. Runtime behavior is unchanged. All three Part 7 phases are complete. Shared/public deployment remains out of current scope; proposed Part 8 covers storage portability and recovery in three phases, none implemented yet.
 
 
 ## Part 7 Phase 2 — Measured comparison usefulness

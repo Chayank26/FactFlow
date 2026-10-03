@@ -1,6 +1,20 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 7 Phase 2 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 7 complete (all three phases) (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+
+
+
+## Part 7 Phase 3 — Operational reconciliation and scope decision
+
+Completed the final Part 7 phase with docs/operations.md: reconciled ports/configuration, health-check boundaries, startup/shutdown, storage paths, backup/restore, troubleshooting, and measured limits. Retain local single-user loopback operation because the current workflow does not require shared hosting. Public/multi-user deployment remains a separate milestone with authentication, storage portability, upload/concurrency controls, and recovery requirements.
+
+Corrected README's claim that all runtime files are untracked: the ignore rule excludes new files, but a legacy database and five sample uploads remain tracked. Preserved these files and history. Documented fresh external storage as an option, not automatic migration. Proposed Part 8 has three phases: storage/recovery specification, portable paths with migration, then relocation/restore verification and repository hygiene. No next-part work has started.
+
+Verification: 61 backend tests pass. An isolated temporary whole-directory backup restored at its original absolute path retained schema 2, SQLite integrity, exact facts and PDF bytes, and supported subsequent reprocess/delete. Initial manual probe used an incorrect route/status expectation; corrected to the implemented POST /process and DELETE 204 before the successful run. No live collection changes. Markdown links and whitespace checks pass; frontend checks were not rerun for documentation-only changes. Existing dependency deprecation warnings remain.
+
+Part 7 is complete (all three phases); no phases remain in this part. No application code, dependencies, deployment, or git commit changed.
+
+Suggested commit message: `docs: complete local operations runbook and deployment scope decision`
 
 
 ## Part 7 Phase 2 — Labeled comparison evaluation
@@ -133,9 +147,9 @@ All three Part 5 phases are complete; their checkpoints are recorded above. Rema
 
 ### Part 7 — Larger collections and evaluated comparisons
 
-1. **Complete:** Measure retrieval and comparison cost on a representative collection; bound document/comparison responses and reduce unnecessary pair work.
-2. Build a labeled comparison evaluation set before considering semantic matching or a model. Checkpoint: measured improvements and traceable evidence, with explicit errors/limitations.
-3. Reconcile operational documentation and decide whether deployment is needed. Authentication, storage portability, upload resource limits, and deployment controls belong in a separate deployment milestone if public/multi-user use is chosen.
+1. **Complete:** Measure retrieval and comparison cost on synthetic sparse/dense collections; bound document/comparison responses and reduce unnecessary pair work.
+2. **Complete:** Build a labeled comparison evaluation set before considering semantic matching or a model. Checkpoint: measured improvements and traceable evidence, with explicit errors/limitations.
+3. **Complete — retain local single-user scope:** Reconcile operational documentation and decide whether deployment is needed. Authentication, storage portability, upload resource limits, and deployment controls belong in a separate deployment milestone if public/multi-user use is chosen.
 
 
 ## Part 4 Phase 8 — Browser workflow checks and polish
