@@ -2,6 +2,11 @@
 
 Updated after every completed phase. Current milestone: Part 9 complete (all three phases) (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
 
+## Beginner guide — Project purpose and tool explanations
+
+Added a beginner guide describing upload → local storage → native/OCR extraction → searchable statements → comparison → original source review, with failure/busy/retry behavior. It explicitly distinguishes extracted statements from verified truth and implemented local features from unsupported deployment/AI capabilities. Existing runtime flow is unchanged. Source/configuration review and Markdown link/whitespace checks pass; no runtime test rerun for documentation only.
+
+
 ## Part 9 Phase 3 — Clear busy outcomes and manual retry
 
 Upload/reprocess/delete → API 503 when another mutation holds the slot → browser explains that upload was not started, evidence was unchanged, or document was not deleted → controls remain available for manual retry after active work finishes. Upload retry requires selecting the file again; no queued/automatic retries exist. A missing network response remains ambiguous: inspect Documents before retrying.

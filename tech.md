@@ -2,6 +2,11 @@
 
 Updated after every completed phase. Current milestone: Part 9 complete (all three phases) (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
 
+## Beginner guide — Project purpose and tool explanations
+
+No new tool or dependency was needed. Added a plain-language guide mapping languages, frontend/backend libraries, PDF/OCR tools, built-in Python helpers, testing tools, and development tools to their actual project roles. Supporting packages are grouped and linked to lockfiles rather than presented as user features. Retained all current technology choices; this explanation makes no new architecture decision. Checked package manifests, imports and configuration; Markdown links and whitespace pass. No code or data changes.
+
+
 ## Part 9 Phase 3 — Explicit 503 handling and deterministic contention tests
 
 No new tool or dependency was needed. React handlers branch on 503 before generic error handling, preserving local evidence and exposing action-specific retry guidance. Upload errors now have alert semantics. The existing Playwright mock harness supports busy responses; its request counts verify mutations occur only on explicit attempts in the tested flow.

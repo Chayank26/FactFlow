@@ -2,6 +2,8 @@
 
 A practice project for extracting grounded facts from PDFs and comparing their context. **Part 9 is complete; Parts 4–8 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
+New to this project? Read [FactFlow explained in very simple words](docs/project-explained-simply.md) for its purpose, user goals, and the role of each main tool.
+
 ## Current capabilities and boundaries
 
 - **Documents:** upload PDFs with a `.pdf` filename and `application/pdf` MIME type, up to 10 MB; inspect, reprocess, or delete them. Filenames are sanitized and limited to 120 characters. Extension/MIME checks do not prove valid PDF content; parsing decides whether extraction succeeds.

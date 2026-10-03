@@ -2,6 +2,11 @@
 
 Updated after every completed phase. Current milestone: Part 9 complete (all three phases) (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
 
+## Beginner guide — Project purpose and tool explanations
+
+Added docs/project-explained-simply.md at the user’s request, explaining the app’s purpose, achievable user goals, workflow, limits, and tools in beginner-friendly language. Linked it from README. This is documentation after Part 9, not a new implementation part. Verified descriptions against application imports, dependency files, configuration, and current behavior; local links and whitespace checks pass. No code, dependencies, or data changed; runtime tests were not rerun for documentation only.
+
+
 ## Part 9 Phase 3 — Browser busy handling and retry verification
 
 Completed Part 9 with explicit 503 messages for upload, reprocess and delete. Messages state which action was not performed and guide manual retry after the active operation finishes; no automatic retry or queue. Upload errors now expose alert semantics. Existing extraction failure/retained-evidence handling remains unchanged.
