@@ -1,6 +1,6 @@
 # Local operations and deployment decision
 
-Updated for Part 8 Phase 2, 2026-10-03; the Part 7 recovery drill below is historical.
+Updated for Part 8 Phase 3, 2026-10-03; the Part 7 recovery drill below is historical.
 
 ## Scope decision
 
@@ -40,7 +40,7 @@ tar -czf "$HOME/FactFlow-backups/factflow-data-$(date +%Y%m%d-%H%M%S).tar.gz" -C
 
 For custom storage, substitute its parent directory and directory name. Keep archives outside the repository; they contain original documents and extracted content. No automated schedule, encryption, retention policy, or off-machine replication is implemented.
 
-Restore a trusted archive with the API stopped. Move the existing data directory to a dated recovery location first, then extract the backup into the original parent directory (`tar -xzf <archive> -C backend` for the default example). For legacy schema 0/1/2, preserve the original absolute root during upgrade. Schema 3 stores filenames relative to uploads; complete-directory relocation verification remains Phase 3. Startup refuses invalid/duplicate/out-of-root legacy references and rolls back all database edits. Restore the original layout rather than guessing paths. Starting with an empty directory is not migration. To roll back an upgrade, restore the whole pre-upgrade backup with compatible application code.
+Restore a trusted archive with the API stopped. Move the existing data directory to a dated recovery location first, then extract the backup into the original parent directory (`tar -xzf <archive> -C backend` for the default example). For legacy schema 0/1/2, preserve the original absolute root during upgrade. Schema 3 stores filenames relative to uploads; complete-directory relocation is verified for the local workflow. Startup refuses invalid/duplicate/out-of-root legacy references and rolls back all database edits. Restore the original layout rather than guessing paths. Starting with an empty directory is not migration. To roll back an upgrade, restore the whole pre-upgrade backup with compatible application code.
 
 Before resuming work, check SQLite integrity and schema, then confirm Documents/Facts and an original PDF. On a disposable copy restored at its original path, also verify reprocessing and deletion; those mutate records. Successful reprocessing replaces fact IDs. Do not assume copying only the database recovers PDFs. Do not reset a collection without a verified backup.
 
@@ -48,7 +48,8 @@ Before resuming work, check SQLite integrity and schema, then confirm Documents/
 
 ## Repository data caveat
 
-`.gitignore` excludes new `backend/data/` files, but Git still tracks a legacy database and five sample text uploads. Ignore rules do not untrack existing files. Check with `git ls-files backend/data` and inspect `git status --short` before commits. This phase preserves those files and Git history. A separate repository-hygiene change can remove tracked runtime artifacts after reviewing their preservation needs. Using a fresh external `FACTFLOW_DATA_DIR` avoids modifying those tracked files during new local work.
+The six legacy runtime artifacts (database and five sample text uploads) have been removed from Git tracking with `git rm --cached`; their local files remain byte-for-byte unchanged and ignored. The removals are staged for the next commit; history was not rewritten. `git ls-files backend/data` now returns nothing. Do not force-add runtime files. This cleanup does not migrate the local database or remove old content from earlier commits.
+
 
 ## Troubleshooting and limits
 
@@ -63,10 +64,20 @@ Before resuming work, check SQLite integrity and schema, then confirm Documents/
 
 Upload accepts at most 10 MB after reading the body into memory. Extraction allows 40 pages, 300-DPI rendering, 12 million pixels/page, and 20 seconds per OCR call. These are not a total-memory quota or throughput guarantee. Native/OCR evidence and comparisons require manual source review.
 
-## Verification and next work
+## Verified schema-3 recovery procedure
 
-Current Phase 2 checkpoint: 83 backend tests and real browser/API integration pass. The earlier schema-2 same-path recovery drill remains historical; full schema-3 relocated recovery is Phase 3. Phase 2 changes storage/migration code without new dependencies. Frontend code is unchanged; real browser/API integration verifies its path compatibility. Existing Part 7 Phase 1 evidence remains 12 mocked browser checks, one real PDF/OCR integration workflow, and a frontend build—not a new run for this phase.
+1. Stop the API and allow workers to exit. For legacy schema 0/1/2, first back up and migrate at its original root using compatible code; do not move before migration.
+2. Archive the entire schema-3 data directory, including uploads. Keep the original/archive until recovery checks pass. Extract a trusted archive into a new empty destination; never merge it over another collection.
+3. Start a fresh backend process with FACTFLOW_DATA_DIR set to the restored directory containing factlayer.db and uploads. API source paths should now point inside that directory.
+4. Check SQLite `PRAGMA integrity_check` (ok) and `PRAGMA foreign_key_check` (no rows) with the API stopped. Compare document/fact counts, IDs, provenance, and source-file hashes against the backup. Reopen facts, original PDFs, and comparisons in the browser. Retained-extraction warnings must survive.
+5. On a disposable verification copy, confirm reprocessing replaces fact IDs, deletion removes only restored sources, and new uploads land in the new root. Do not treat reprocessing as a non-mutating verification step.
 
-Reproduce backend checks using the README command. Dedicated test ports are 5189 for browser mocks, and 5190/8029 for real browser/API integration; test storage is temporary. See [OCR measurements](ocr-plan.md), [collection performance](collection-performance.md), and [comparison evaluation](comparison-quality.md) for synthetic workload assumptions and reproduction commands.
+A database-only or incomplete archive cannot recover missing source bytes: source access returns 404 and failed reprocessing retains facts. There is no fallback to the old location. A legacy archive moved before migration is rejected without changing its database; restore it at the original root first. These checks do not establish crash consistency, live-backup safety, or off-machine archival durability.
 
-Part 8 specification and implementation are complete; see the [migration contract and gates](storage-portability-plan.md). Relocation/recovery verification and repository hygiene remain Phase 3. The live collection has not been upgraded by development checks. No deployment is authorized or implemented by this work.
+## Verification and remaining scope
+
+Part 8 is complete. Current checks: **87 backend tests, 12 mocked desktop/mobile browser checks, two real browser/API workflows, and production build pass**. Backend recovery tests use separate seed/restore processes with real native/OCR fixtures and archive restoration. Same-path, relocated, missing-source, and moved-legacy cases pass. Browser startup uses the restored collection with the original path unavailable; source bytes, provenance, retained warnings, comparisons, reprocessing, and deletion are checked. The existing upload lifecycle runs afterward.
+
+Reproduce with the README backend, browser mock, integration, and build commands. Run only the recovery cases from backend with `.venv/bin/python -m pytest -q tests/test_storage_recovery.py`. Tesseract with English data and locked Python dependencies are required for the real OCR fixtures. Ports remain 5189 for mocks and 5190/8029 for integration. All fixture storage is temporary; normal local data is never imported by the recovery probes.
+
+SHA-256 checks before/after untracking confirmed all six local files were preserved and ignored. No live-data migration, deployment, dependency change, or commit was performed. Local single-user scope remains; no Part 9 implementation is implied. See [storage acceptance gates](storage-portability-plan.md), [OCR measurements](ocr-plan.md), [collection benchmarks](collection-performance.md), and [comparison evaluation](comparison-quality.md) for limits.

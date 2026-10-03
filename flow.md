@@ -1,9 +1,19 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 8 Phase 2 implementation complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 8 complete (all three phases) (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
 
 
 
+
+
+
+## Part 8 Phase 3 — Verified restore at a new location
+
+**Working journey:** stopped schema-3 collection → whole-directory archive → restore into empty new root → fresh API configured for that root → browser inspects native/OCR facts, original PDFs, retained warnings and comparisons → reprocess/delete or upload new documents at restored root. Legacy collections must migrate at their original root before moving.
+
+Fresh-process tests verify source hashes, unchanged pre-reprocess evidence/IDs, schema/integrity, and no use of the unavailable old path. Missing uploads return 404; failed processing preserves facts. Moved schema-2 archives refuse migration instead of guessing source ownership. Live backups and crash-atomic database/filesystem mutations are not supported.
+
+Checkpoint: 87 backend tests, 12 browser mocks, two real integration workflows, and build pass. Six local runtime files are now untracked/ignored with unchanged bytes; Git removals are staged, no commit made. Part 8 complete; no deployment or local collection migration occurred.
 
 
 ## Part 8 Phase 2 — Portable references in the running API

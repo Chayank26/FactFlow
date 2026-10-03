@@ -1,9 +1,23 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 8 Phase 2 implementation complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 8 complete (all three phases) (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
 
 
 
+
+
+
+## Part 8 Phase 3 — Verified recovery and repository hygiene
+
+Completed the final Part 8 phase with fresh-process schema-3 backup/restore tests and a restored-collection browser workflow. Native/OCR evidence, retained failures, source bytes, IDs, and provenance survive same-path/new-root recovery. Missing uploads report failure without losing facts; moved legacy archives reject without database mutation. This verifies the portability implementation before closing its operational guidance.
+
+Verification: 87 backend tests, 12 desktop/mobile browser mocks, two real PDF/OCR integration workflows, frontend build, Markdown links, and whitespace checks pass. Separate seed/restore processes ensure no cached root is used. Reprocess/new upload/delete operate on restored storage; the preserved original copy remains intact. Existing deprecation/color warnings remain.
+
+Removed the legacy database and five sample uploads from Git tracking only. The sandbox required approved Git-index access; SHA-256 checks confirm all six local files unchanged and ignored. Those removals are staged, with no commit or history rewrite. No user-data migration or application runtime change in this phase.
+
+Updated README, runbook, storage plan, and all learning logs. Part 8 is complete: zero phases remain. Local single-user scope continues; no next part is implemented.
+
+Suggested commit message: `test: verify portable recovery and untrack local runtime data`
 
 
 ## Part 8 Phase 2 — Portable storage and transactional migration

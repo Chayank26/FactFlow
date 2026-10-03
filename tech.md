@@ -1,9 +1,19 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 8 Phase 2 implementation complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 8 complete (all three phases) (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
 
 
 
+
+
+
+## Part 8 Phase 3 — Process-isolated recovery fixtures
+
+No new tool or dependency was needed. Used existing pytest, subprocess, tarfile, sqlite3, hashlib, synthetic PDF/OCR helpers, and Playwright. Seed processes exit before archives are copied; verification uses fresh application imports at the restored root. The browser test launcher likewise seeds, archives, relocates, verifies, then serves restored temporary data.
+
+Four recovery cases cover same-path/new-root restore, missing uploads, and rejected relocated legacy storage. Assertions check integrity/foreign keys, IDs/evidence/provenance, original hashes, reprocess replacement, and mutation isolation. This is stronger than changing module globals in one process but does not simulate power loss, live snapshots, or multi-user access.
+
+Verification: 87 backend tests, 12 browser mocks, two real browser/API tests, frontend build, and documentation checks pass. Existing warnings remain. Git cached removal untracks six runtime artifacts; pre/post SHA-256 and ignore checks preserve local bytes. No dependency/runtime changes, local schema migration, history rewrite, or commit. All three Part 8 phases complete.
 
 
 ## Part 8 Phase 2 — Shared resolver and explicit SQLite transaction

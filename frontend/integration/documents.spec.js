@@ -28,6 +28,39 @@ const navigate = async (page, name) => {
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible()
 }
 
+test('restored native and OCR evidence remains inspectable in the browser', async ({ page, request }) => {
+  const docs = (await (await request.get(`${api}/documents`)).json()).items
+  expect(docs).toHaveLength(2)
+  await page.goto('/')
+  for (const doc of docs) {
+    expect(doc.stored_path).toContain('/restored/data/uploads/')
+    await page.getByRole('button', { name: `View ${doc.filename}`, exact: true }).click()
+    const detail = page.locator('.document-detail')
+    await expect(detail).toContainText('Revenue increased 20 percent.')
+    if (doc.filename === 'scan.pdf') {
+      await expect(detail).toContainText('OCR — verify against PDF')
+      await expect(detail).toContainText('Latest extraction failed.')
+    }
+    const link = detail.getByRole('link', { name: 'Open PDF · page 1 (new tab)' }).first()
+    expect(await (await request.get(await link.getAttribute('href'))).body()).toEqual(readFileSync(doc.stored_path))
+  }
+  await navigate(page, 'Facts')
+  await expect(page.getByText('Latest extraction failed. This evidence is retained from an earlier successful run.')).toBeVisible()
+  await navigate(page, 'Comparisons')
+  await expect(page.locator('.comparison-card')).toHaveCount(1)
+  await expect(page.locator('.comparison-card')).toContainText('Matching wording')
+  await navigate(page, 'Documents')
+  for (const doc of docs) {
+    const response = page.waitForResponse(r => r.url().endsWith(`/documents/${doc.id}/process`))
+    await page.getByRole('button', { name: `Reprocess ${doc.filename}`, exact: true }).click()
+    expect((await response).status()).toBe(200)
+    page.once('dialog', dialog => dialog.accept())
+    await page.getByRole('button', { name: `Delete ${doc.filename}`, exact: true }).click()
+    await expect(page.getByRole('button', { name: `View ${doc.filename}`, exact: true })).toHaveCount(0)
+    expect(existsSync(doc.stored_path)).toBe(false)
+  }
+})
+
 test('real PDF upload, extraction, pagination, comparison, reprocess, and deletion', async ({ page, request }) => {
   const errors = []
   page.on('pageerror', error => errors.push(error.message))

@@ -2,6 +2,8 @@
 import os
 from pathlib import Path
 import sys
+import subprocess
+import tarfile
 from tempfile import TemporaryDirectory
 
 import uvicorn
@@ -12,7 +14,21 @@ def main():
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     with TemporaryDirectory(prefix="factflow-browser-") as directory:
         # Set before importing app.main: import initializes the database.
-        os.environ["FACTFLOW_DATA_DIR"] = directory
+        root = Path(directory)
+        original = root / 'original' / 'data'
+        manifest = root / 'manifest.json'
+        env = {**os.environ, 'FACTFLOW_DATA_DIR': str(original)}
+        subprocess.run([sys.executable, '-m', 'tests.recovery_fixture', 'seed', str(manifest)], cwd=Path(__file__).resolve().parents[1], env=env, check=True)
+        archive = root / 'backup.tar.gz'
+        with tarfile.open(archive, 'w:gz') as handle:
+            handle.add(original, arcname='data')
+        original.rename(root / 'retained-original')
+        restored = root / 'restored'
+        restored.mkdir()
+        with tarfile.open(archive) as handle:
+            handle.extractall(restored, filter='data')
+        os.environ["FACTFLOW_DATA_DIR"] = str(restored / 'data')
+        subprocess.run([sys.executable, '-m', 'tests.recovery_fixture', 'verify', str(manifest)], cwd=Path(__file__).resolve().parents[1], env=os.environ.copy(), check=True)
         from app.main import app
 
         app.add_middleware(

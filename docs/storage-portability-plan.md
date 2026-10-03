@@ -1,6 +1,6 @@
 # Part 8 — Storage portability and recovery
 
-Updated after Part 8 Phase 2, 2026-10-03. **Schema-3 implementation and Phase-2 gates are verified.** Phase-3 relocation/recovery and repository hygiene remain planned. The audit below records the Phase-1 baseline; the reference and migration contracts are now implemented.
+Updated after Part 8 Phase 3, 2026-10-03. **All three Part 8 phases are complete.** Schema-3 migration, relocated recovery, and repository hygiene are verified. The audit below records the Phase-1 baseline; the reference and migration contracts are now implemented.
 
 ## Three phases
 
@@ -43,7 +43,7 @@ Helper names may change during implementation; changes to preservation/failure g
 
 ## Required fixtures and gates
 
-Phase-2 fixtures below now pass; Phase-3 fixtures remain specified only. Use temporary roots A/B, generated PDFs, snapshots/hashes, and an outside sentinel that must remain untouched.
+Phase-2 and Phase-3 fixture gates below now pass; results are recorded in the completion checkpoint. Use temporary roots A/B, generated PDFs, snapshots/hashes, and an outside sentinel that must remain untouched.
 
 | Fixture | Acceptance gate | Phase |
 | --- | --- | --- |
@@ -77,3 +77,11 @@ Specification reviewed against schema initialization, upload, serialization, sou
 Implemented app/storage.py plus transactional schema-3 startup, shared resolution for source/process/delete and absolute API serialization, and filename-only uploads. Resolver also rejects existing non-regular files. Explicit BEGIN IMMEDIATE encloses schema/path/version edits; legacy preflight precedes updates and future schemas fail before schema changes. Invalid metadata paths serialize as empty. Deletion unlinks first and retains rows if unlink fails; filesystem/database crash atomicity is not claimed.
 
 83 backend tests pass, including legacy versions, evidence/OCR method preservation, idempotence, invalid/duplicate paths, mid-migration rollback of schema and paths, future-version refusal, missing sources, tampering/symlinks, and deletion retry. Existing source/upload tests and real PDF/OCR browser integration verify new collections and absolute API compatibility. No dependency or local-data migration. Phase 3 must still verify relocated archives end to end and reconcile tracked artifacts.
+
+## Phase 3 completion checkpoint
+
+Added reproducible fresh-process recovery tests with real native/OCR evidence, a failed extraction with retained facts, and archived sources. Four scenarios pass: same-path restore, new-root restore with original path unavailable, missing uploads, and moved legacy rejection without database mutation. Integrity/foreign-key checks, metadata/fact equality, source hashes, reprocess replacement, new uploads, and deletion are asserted. The preserved original copy is independently checked after restored-copy mutations.
+
+The real browser launcher now serves an archived/restored temporary collection at a new root. A new workflow checks native/OCR source links, retained warnings, comparisons, reprocessing, and deletion; the existing lifecycle follows it. All 87 backend tests, 12 mocked browser checks, two real integration workflows, and frontend build pass. Existing dependency/color warnings remain non-blocking.
+
+Removed six runtime files from the Git index with local hashes unchanged and ignore rules verified; no history rewrite, user-data migration, or commit. Updated operations guidance with the actual restore procedure and failure boundaries. Part 8 is complete; multi-user deployment, live backup, and crash-atomic cross-resource operations remain outside scope.

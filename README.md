@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 8 Phase 2 implementation is complete; Parts 4–7 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 8 is complete; Parts 4–7 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -110,9 +110,9 @@ npm run test:integration
 PLAYWRIGHT_CHANNEL=chrome npm run test:integration
 ```
 
-This separate suite starts a real FastAPI server on **8029** and Vite on **5190**, and refuses to reuse running servers; both ports must be free. The Python test launcher sets a new temporary data directory before importing the app and adds only the test frontend origin to its CORS middleware. Normal app configuration is unchanged. Playwright stops both servers, and graceful backend shutdown removes temporary storage. A forced process kill may leave a temporary directory behind, never the normal app database.
+This separate suite starts a real FastAPI server on **8029** and Vite on **5190**, and refuses to reuse running servers; both ports must be free. The Python test launcher seeds and archives a temporary native/OCR collection in a separate process, makes its original path unavailable, restores it at a new root, and sets that restored data directory before importing the app and adds only the test frontend origin to its CORS middleware. Normal app configuration is unchanged. Playwright stops both servers, and graceful backend shutdown removes temporary storage. A forced process kill may leave a temporary directory behind, never the normal app database.
 
-The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop lifecycle workflow including extraction failure/recovery and real scanned-PDF upload; the separate twelve-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
+The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. Two desktop workflows cover restored native/OCR evidence and the existing upload lifecycle; the separate twelve-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
 
 ## Inspect original sources
 
@@ -132,7 +132,7 @@ Comparisons show **Matching wording** when claims match after normalizing case, 
 
 ## Local database maintenance
 
-The development database defaults to `backend/data/factlayer.db` and PDFs live in `backend/data/uploads/`; new files are ignored by Git, but a legacy database and five sample text uploads remain tracked. See the [operations runbook](docs/operations.md#repository-data-caveat). Set `FACTFLOW_DATA_DIR` before starting the backend to use an alternative storage directory. The commands below assume the default location and are run from the project root.
+The development database defaults to `backend/data/factlayer.db` and PDFs live in `backend/data/uploads/`; runtime files are ignored by Git. The six legacy artifacts have been removed from tracking while preserving their local bytes. See the [operations runbook](docs/operations.md#repository-data-caveat). Set `FACTFLOW_DATA_DIR` before starting the backend to use an alternative storage directory. The commands below assume the default location and are run from the project root.
 
 Stop the backend before backing up so metadata and files describe the same state. Back up the **whole data directory**, not just SQLite:
 
@@ -141,7 +141,7 @@ mkdir -p "$HOME/FactFlow-backups"
 tar -czf "$HOME/FactFlow-backups/factflow-data-$(date +%Y%m%d-%H%M%S).tar.gz" -C backend data
 ```
 
-The example keeps archives outside the repository. To restore at the same project location, stop the backend, move any existing `backend/data` aside, and extract the chosen archive with `tar -xzf <archive> -C backend`. Schema 3 stores source filenames relative to uploads; API responses still provide absolute paths. Legacy schema 0/1/2 collections must be backed up and upgraded at their original root before relocation. Full relocated-backup verification remains Part 8 Phase 3. A copied database alone does not preserve the source PDFs.
+The example keeps archives outside the repository. To restore at the same project location, stop the backend, move any existing `backend/data` aside, and extract the chosen archive with `tar -xzf <archive> -C backend`. Schema 3 stores source filenames relative to uploads; API responses still provide absolute paths. Legacy schema 0/1/2 collections must be backed up and upgraded at their original root before relocation. Same-path and relocated schema-3 recovery are verified with fresh processes and real browser/API checks; see the operations runbook for the procedure. A copied database alone does not preserve the source PDFs.
 
 To reset local documents, facts, and uploaded files, stop the backend and remove the runtime data directory. The next backend start recreates the schema:
 
@@ -175,7 +175,7 @@ frontend/integration/          Real browser/API workflow
 frontend/playwright.integration.config.js  Integration server lifecycle
 ```
 
-Original reference PDFs and ZIP remain untouched and are ignored by Git. Runtime SQLite data and uploaded files default to backend/data; new files are ignored, but legacy tracked artifacts remain (see the operations runbook). No model service or credentials are needed for local development.
+Original reference PDFs and ZIP remain untouched and are ignored by Git. Runtime SQLite data and uploaded files default to backend/data and are ignored; legacy tracking has been removed while local files were preserved. No model service or credentials are needed for local development.
 
 ## Comparison quality evaluation
 
@@ -183,4 +183,4 @@ A reproducible evaluation covers 48 synthetic labeled evidence pairs. The select
 
 ## Part 8: storage portability and recovery
 
-Part 8 has three phases: specification and implementation (complete), then relocation/recovery verification. The [migration plan and acceptance gates](docs/storage-portability-plan.md) define portable database references while preserving API compatibility. Schema 3 now stores filename-only references and validates source access, reprocessing, and deletion through one resolver. Invalid references return 404 for source access and 409 for process/delete; metadata hides invalid paths. Failed file deletion preserves rows for retry. One phase remains: full relocated recovery verification and repository hygiene. Existing local data has not been migrated by this work.
+All three Part 8 phases are complete: specification, implementation, and relocation/recovery verification. The [migration plan and acceptance gates](docs/storage-portability-plan.md) define portable database references while preserving API compatibility. Schema 3 now stores filename-only references and validates source access, reprocessing, and deletion through one resolver. Invalid references return 404 for source access and 409 for process/delete; metadata hides invalid paths. Failed file deletion preserves rows for retry. Recovery verification and repository hygiene are complete. Existing local data was preserved byte-for-byte and has not been migrated by this work. Git removals are staged; no commit was created.
