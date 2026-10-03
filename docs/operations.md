@@ -1,6 +1,6 @@
 # Local operations and deployment decision
 
-Part 7 Phase 3, verified 2026-10-03.
+Updated for Part 8 Phase 2, 2026-10-03; the Part 7 recovery drill below is historical.
 
 ## Scope decision
 
@@ -17,7 +17,7 @@ Use the dependency setup and two terminal commands in [README](../README.md#run-
 | `FACTFLOW_DATA_DIR` | Read at API import/startup; defaults to `backend/data`, resolved to an absolute path. Set before starting the API. |
 | `FACTFLOW_TESSERACT` | OCR executable name or absolute path; default `tesseract`. Requires English language data. |
 | `VITE_API_BASE_URL` | Public browser configuration; defaults to `http://127.0.0.1:8019`. Restart Vite after editing `.env.local`; rebuild compiled assets after changing build configuration. |
-| Schema | SQLite version 2, initialized/upgraded on startup; no downgrade tooling. |
+| Schema | SQLite version 3, transactionally upgraded on startup; back up before upgrade; no downgrade tooling. |
 
 For a fresh collection outside the repository, run from `backend/` with a new directory:
 
@@ -40,7 +40,7 @@ tar -czf "$HOME/FactFlow-backups/factflow-data-$(date +%Y%m%d-%H%M%S).tar.gz" -C
 
 For custom storage, substitute its parent directory and directory name. Keep archives outside the repository; they contain original documents and extracted content. No automated schedule, encryption, retention policy, or off-machine replication is implemented.
 
-Restore a trusted archive with the API stopped. Move the existing data directory to a dated recovery location first, then extract the backup into the original parent directory (`tar -xzf <archive> -C backend` for the default example). Preserve the exact original absolute data path: database records store absolute PDF paths. Relocation requires a separate path migration, which is not implemented. Starting with an empty directory is not a migration.
+Restore a trusted archive with the API stopped. Move the existing data directory to a dated recovery location first, then extract the backup into the original parent directory (`tar -xzf <archive> -C backend` for the default example). For legacy schema 0/1/2, preserve the original absolute root during upgrade. Schema 3 stores filenames relative to uploads; complete-directory relocation verification remains Phase 3. Startup refuses invalid/duplicate/out-of-root legacy references and rolls back all database edits. Restore the original layout rather than guessing paths. Starting with an empty directory is not migration. To roll back an upgrade, restore the whole pre-upgrade backup with compatible application code.
 
 Before resuming work, check SQLite integrity and schema, then confirm Documents/Facts and an original PDF. On a disposable copy restored at its original path, also verify reprocessing and deletion; those mutate records. Successful reprocessing replaces fact IDs. Do not assume copying only the database recovers PDFs. Do not reset a collection without a verified backup.
 
@@ -57,7 +57,7 @@ Before resuming work, check SQLite integrity and schema, then confirm Documents/
 | Browser offline or fetch failure | Confirm API 8019, browser API URL, and exact allowed frontend origin; restart configuration changes. Preview port 4173 is not in default CORS origins. |
 | Port already in use | Stop your own prior server or consistently change client/API/CORS ports; do not stop unrelated projects. |
 | OCR fails | Read the persisted extraction error; check engine/English data, page/image limits and readability. Failed reprocessing preserves earlier evidence. |
-| Source PDF returns 404 | Confirm registered file exists inside configured uploads and absolute paths still match; restore missing files from the matching backup. |
+| Source PDF returns 404 | Confirm registered file exists inside configured uploads and the configured uploads root and source references still match; restore missing files from the matching backup. |
 | Slow upload or comparison | Extraction has a 90-second document deadline, but no global concurrency bound. Dense comparisons remain quadratic and load all facts. See measured workload limits below. |
 | Stale evidence after failure/restart | Reload document status and inspect original PDF; retained facts can be from the earlier successful run. No extraction history or durable task queue exists. |
 
@@ -65,8 +65,8 @@ Upload accepts at most 10 MB after reading the body into memory. Extraction allo
 
 ## Verification and next work
 
-Current checkpoint: 61 backend tests pass; isolated same-path recovery passes. Documentation changes introduce no runtime code or dependencies; frontend build/browser checks were not rerun. Existing Part 7 Phase 1 evidence remains 12 mocked browser checks, one real PDF/OCR integration workflow, and a frontend build—not a new run for this phase.
+Current Phase 2 checkpoint: 83 backend tests and real browser/API integration pass. The earlier schema-2 same-path recovery drill remains historical; full schema-3 relocated recovery is Phase 3. Phase 2 changes storage/migration code without new dependencies. Frontend code is unchanged; real browser/API integration verifies its path compatibility. Existing Part 7 Phase 1 evidence remains 12 mocked browser checks, one real PDF/OCR integration workflow, and a frontend build—not a new run for this phase.
 
 Reproduce backend checks using the README command. Dedicated test ports are 5189 for browser mocks, and 5190/8029 for real browser/API integration; test storage is temporary. See [OCR measurements](ocr-plan.md), [collection performance](collection-performance.md), and [comparison evaluation](comparison-quality.md) for synthetic workload assumptions and reproduction commands.
 
-Part 8 has started: [Phase 1 specification](storage-portability-plan.md) is complete. Its three phases are specification, portable references/migration, and relocation/recovery verification with repository hygiene. The latter two remain planned; current schema-2 storage and same-path recovery limitations still apply. No deployment is authorized or implemented by this work.
+Part 8 specification and implementation are complete; see the [migration contract and gates](storage-portability-plan.md). Relocation/recovery verification and repository hygiene remain Phase 3. The live collection has not been upgraded by development checks. No deployment is authorized or implemented by this work.

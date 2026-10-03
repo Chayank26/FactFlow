@@ -56,7 +56,7 @@ if __name__ == '__main__':
                 connection.execute('DELETE FROM facts')
                 connection.execute('DELETE FROM documents')
                 for i in range(100):
-                    connection.execute('INSERT INTO documents (id, filename, size_bytes, stored_path, created_at, status) VALUES (?, ?, 0, ?, ?, ?)', (f'd{i:03}', f'source-{i}.pdf', '/unused', 'now', 'processed'))
+                    connection.execute('INSERT INTO documents (id, filename, size_bytes, stored_path, created_at, status) VALUES (?, ?, 0, ?, ?, ?)', (f'd{i:03}', f'source-{i}.pdf', 'unused.pdf', 'now', 'processed'))
                 connection.executemany('INSERT INTO facts (id, document_id, claim, source_page, source_text, created_at) VALUES (?, ?, ?, 1, ?, ?)', [(f'f{i:05}', r['document_id'], r['claim'], r['claim'], 'now') for i, r in enumerate(rows)])
             endpoints = {}
             for path in ['/documents', '/facts', '/comparisons']:

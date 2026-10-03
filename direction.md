@@ -1,8 +1,20 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 8 Phase 1 specification complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 8 Phase 2 implementation complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
 
 
+
+
+
+## Part 8 Phase 2 — Portable storage and transactional migration
+
+Implemented schema 3 filename-only database references while preserving absolute API responses. Added shared source validation for serialization, source serving, reprocessing and deletion. Legacy 0/1/2 startup migration preflights paths and commits schema/data/version together; invalid/duplicate/out-of-root paths or future schemas fail explicitly. Deletion now preserves rows when file removal fails. This implements the prior specification before relocation verification.
+
+Verification: 83 backend tests pass, including preservation/idempotence, legacy rejection, schema/path rollback on injected failure, future versions, tampering, missing sources, and unlink retry. Real PDF/OCR browser/API integration passes with unchanged absolute response paths. The sandbox initially blocked test-server binding; the approved rerun passed. Existing dependency/color warnings remain. Markdown links and whitespace checks pass. No new dependency, frontend change, local collection migration, or Git untracking.
+
+Updated README, operations, and the storage plan to distinguish implemented schema 3 from the remaining recovery drill. Phase 2 complete; Phase 3 remains relocated recovery verification and repository hygiene. No commit created.
+
+Suggested commit message: `feat: add portable source references and transactional storage migration`
 
 
 ## Part 8 Phase 1 — Storage migration and recovery specification

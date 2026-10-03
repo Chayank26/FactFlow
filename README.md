@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 8 Phase 1 specification is complete; Parts 4–7 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 8 Phase 2 implementation is complete; Parts 4–7 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -141,7 +141,7 @@ mkdir -p "$HOME/FactFlow-backups"
 tar -czf "$HOME/FactFlow-backups/factflow-data-$(date +%Y%m%d-%H%M%S).tar.gz" -C backend data
 ```
 
-The example keeps archives outside the repository. To restore at the same project location, stop the backend, move any existing `backend/data` aside, and extract the chosen archive with `tar -xzf <archive> -C backend`. SQLite stores absolute PDF paths: moving the project or changing the storage location requires path migration before reprocessing/deletion will work correctly. A copied database alone does not preserve the source PDFs.
+The example keeps archives outside the repository. To restore at the same project location, stop the backend, move any existing `backend/data` aside, and extract the chosen archive with `tar -xzf <archive> -C backend`. Schema 3 stores source filenames relative to uploads; API responses still provide absolute paths. Legacy schema 0/1/2 collections must be backed up and upgraded at their original root before relocation. Full relocated-backup verification remains Part 8 Phase 3. A copied database alone does not preserve the source PDFs.
 
 To reset local documents, facts, and uploaded files, stop the backend and remove the runtime data directory. The next backend start recreates the schema:
 
@@ -149,7 +149,7 @@ To reset local documents, facts, and uploaded files, stop the backend and remove
 rm -rf backend/data
 ```
 
-The API applies the current SQLite schema version and indexes automatically when it starts. This is a local development migration boundary, not a production backup system.
+The API applies schema 3 and indexes transactionally when it starts. Back up the whole stopped collection before upgrading. Invalid/out-of-root, symlink, or duplicate legacy paths abort the upgrade without partial database changes; restore at the original root to resolve migration failures. Newer schemas are refused. Downgrade requires restoring a compatible pre-upgrade backup. This is a local development migration boundary, not a production backup system.
 
 ## Learning logs
 
@@ -183,4 +183,4 @@ A reproducible evaluation covers 48 synthetic labeled evidence pairs. The select
 
 ## Part 8: storage portability and recovery
 
-Part 8 has three phases: specification (complete), implementation, and relocation/recovery verification. The [migration plan and acceptance gates](docs/storage-portability-plan.md) define portable database references while preserving API compatibility. This is a specification checkpoint only: storage is still schema 2 with absolute paths, and moving an existing collection remains unsupported. Two phases remain.
+Part 8 has three phases: specification and implementation (complete), then relocation/recovery verification. The [migration plan and acceptance gates](docs/storage-portability-plan.md) define portable database references while preserving API compatibility. Schema 3 now stores filename-only references and validates source access, reprocessing, and deletion through one resolver. Invalid references return 404 for source access and 409 for process/delete; metadata hides invalid paths. Failed file deletion preserves rows for retry. One phase remains: full relocated recovery verification and repository hygiene. Existing local data has not been migrated by this work.

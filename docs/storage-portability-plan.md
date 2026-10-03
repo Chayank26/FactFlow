@@ -1,6 +1,6 @@
 # Part 8 — Storage portability and recovery
 
-Phase 1 specification, 2026-10-03. **Planned behavior, not implemented:** current storage remains schema 2 with absolute paths and verified same-path recovery only.
+Updated after Part 8 Phase 2, 2026-10-03. **Schema-3 implementation and Phase-2 gates are verified.** Phase-3 relocation/recovery and repository hygiene remain planned. The audit below records the Phase-1 baseline; the reference and migration contracts are now implemented.
 
 ## Three phases
 
@@ -43,7 +43,7 @@ Helper names may change during implementation; changes to preservation/failure g
 
 ## Required fixtures and gates
 
-Fixtures below are **specified, not generated or passed in Phase 1**. Use temporary roots A/B, generated PDFs, snapshots/hashes, and an outside sentinel that must remain untouched.
+Phase-2 fixtures below now pass; Phase-3 fixtures remain specified only. Use temporary roots A/B, generated PDFs, snapshots/hashes, and an outside sentinel that must remain untouched.
 
 | Fixture | Acceptance gate | Phase |
 | --- | --- | --- |
@@ -71,3 +71,9 @@ No new dependency is planned: pathlib/sqlite3 for implementation; tempfile/tarfi
 ## Phase 1 checkpoint
 
 Specification reviewed against schema initialization, upload, serialization, source/process/delete and existing tests; baseline backend suite passes. No schema-3, relocation, new containment, or tracked-file cleanup claim is made. See [operations](operations.md) for currently supported behavior.
+
+## Phase 2 implementation checkpoint
+
+Implemented app/storage.py plus transactional schema-3 startup, shared resolution for source/process/delete and absolute API serialization, and filename-only uploads. Resolver also rejects existing non-regular files. Explicit BEGIN IMMEDIATE encloses schema/path/version edits; legacy preflight precedes updates and future schemas fail before schema changes. Invalid metadata paths serialize as empty. Deletion unlinks first and retains rows if unlink fails; filesystem/database crash atomicity is not claimed.
+
+83 backend tests pass, including legacy versions, evidence/OCR method preservation, idempotence, invalid/duplicate paths, mid-migration rollback of schema and paths, future-version refusal, missing sources, tampering/symlinks, and deletion retry. Existing source/upload tests and real PDF/OCR browser integration verify new collections and absolute API compatibility. No dependency or local-data migration. Phase 3 must still verify relocated archives end to end and reconcile tracked artifacts.

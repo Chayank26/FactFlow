@@ -39,7 +39,7 @@ def test_index_matches_exhaustive_reference_including_single_term_agreement():
 def seed(count=25):
     with get_connection() as connection:
         for i in range(count):
-            connection.execute('INSERT INTO documents (id, filename, size_bytes, stored_path, created_at, status) VALUES (?, ?, 0, ?, ?, ?)', (f'd{i:03}', f'source-{i:03}.pdf', '/unused', 'same-time', 'extraction_failed' if i == 24 else 'processed'))
+            connection.execute('INSERT INTO documents (id, filename, size_bytes, stored_path, created_at, status) VALUES (?, ?, 0, ?, ?, ?)', (f'd{i:03}', f'source-{i:03}.pdf', 'unused.pdf', 'same-time', 'extraction_failed' if i == 24 else 'processed'))
             connection.execute('INSERT INTO facts (id, document_id, claim, source_page, source_text, created_at) VALUES (?, ?, ?, 1, ?, ?)', (f'f{i:03}', f'd{i:03}', 'Revenue increased 20 percent.', 'Revenue increased 20 percent.', 'same-time'))
 
 

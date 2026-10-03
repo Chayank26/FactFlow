@@ -1,8 +1,18 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 8 Phase 1 specification complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 8 Phase 2 implementation complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
 
 
+
+
+
+## Part 8 Phase 2 — Shared resolver and explicit SQLite transaction
+
+No new tool or dependency was needed. Added pure app/storage.py using pathlib for filename validation and legacy preflight. Schema 3 keeps the stored_path column with relative filename semantics; response serialization supplies the current absolute path. Explicit BEGIN IMMEDIATE encompasses schema/index/path/version work, with rollback on exceptions and newer-version refusal. Tests inject failures after path conversion to verify schema rollback as well.
+
+Retained SQLite and filesystem storage. Shared validation rejects traversal, outside references, source symlinks, and existing non-regular files; deletion attempts unlink before row removal and reports 409 on failure. A later database failure can still leave a missing file with retained metadata: no cross-resource atomicity or hostile-local-process race protection is claimed.
+
+Verification: 83 backend tests and real browser/API PDF/OCR integration pass. Updated artificial /unused fixtures to filename references and legacy tests to valid original-root paths. Existing warnings remain. No frontend build rerun because frontend code is unchanged; browser integration verifies compatibility. No runtime data migration or untracking occurred. Phase 3 remains full relocation/recovery verification and repository hygiene.
 
 
 ## Part 8 Phase 1 — Portable reference design

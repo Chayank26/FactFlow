@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from app.extraction import extract_pages
+from app.storage import InvalidSource, resolve_source, migrate_source_references
 from app.comparison_candidates import candidate_pairs, claim_tokens, normalized_claim
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,7 +20,7 @@ UPLOADS_DIR = DATA_DIR / "uploads"
 DB_PATH = DATA_DIR / "factlayer.db"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_FILENAME_LENGTH = 120
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def init_db() -> None:
@@ -28,6 +29,10 @@ def init_db() -> None:
 
     with sqlite3.connect(DB_PATH) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("BEGIN IMMEDIATE")
+        current_version = connection.execute("PRAGMA user_version").fetchone()[0]
+        if current_version > SCHEMA_VERSION:
+            raise ValueError("Database schema is newer than this application; use compatible code.")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS documents (
@@ -63,8 +68,8 @@ def init_db() -> None:
         connection.execute("CREATE INDEX IF NOT EXISTS idx_facts_document_id ON facts (document_id)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_facts_created_at ON facts (created_at)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents (created_at)")
-        current_version = connection.execute("PRAGMA user_version").fetchone()[0]
         if current_version < SCHEMA_VERSION:
+            migrate_source_references(connection, UPLOADS_DIR)
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         connection.commit()
 
@@ -208,12 +213,16 @@ def extract_facts(file_path: Path, document_id: str) -> list[FactResponse]:
 
 
 def document_from_row(row: sqlite3.Row) -> DocumentResponse:
+    try:
+        stored_path = str(resolve_source(row["stored_path"], UPLOADS_DIR))
+    except InvalidSource:
+        stored_path = ""
     return DocumentResponse(
         id=row["id"],
         filename=row["filename"],
         size_bytes=row["size_bytes"],
         content_type=row["content_type"],
-        stored_path=row["stored_path"],
+        stored_path=stored_path,
         created_at=row["created_at"],
         status=row["status"],
         extraction_error=row["extraction_error"],
@@ -282,7 +291,10 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
 
     safe_name = safe_filename(file.filename)
     document_id = str(uuid.uuid4())
-    file_path = UPLOADS_DIR / f"{document_id}_{safe_name}"
+    try:
+        file_path = resolve_source(f"{document_id}_{safe_name}", UPLOADS_DIR)
+    except InvalidSource as error:
+        raise HTTPException(status_code=400, detail="Invalid filename") from error
 
     content = await file.read()
     if len(content) > MAX_UPLOAD_BYTES:
@@ -303,7 +315,7 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
                 safe_name,
                 len(content),
                 file.content_type,
-                str(file_path),
+                file_path.name,
                 created_at,
                 status,
             ),
@@ -351,15 +363,15 @@ def get_document(document_id: str) -> DocumentResponse:
 @app.post("/documents/{document_id}/process", response_model=DocumentResponse)
 def reprocess_document(document_id: str) -> DocumentResponse:
     row = get_document_row(document_id)
-    process_document(document_id, Path(row["stored_path"]))
+    process_document(document_id, source_path(row))
     return document_from_row(get_document_row(document_id))
 
 
 @app.get("/documents/{document_id}/source", response_class=FileResponse)
 def get_document_source(document_id: str) -> FileResponse:
     row = get_document_row(document_id)
-    path = Path(row["stored_path"]).resolve()
-    if not path.is_relative_to(UPLOADS_DIR.resolve()) or not path.is_file():
+    path = source_path(row, status_code=404)
+    if not path.is_file():
         raise HTTPException(status_code=404, detail="Source PDF not found")
     return FileResponse(
         path,
@@ -370,15 +382,25 @@ def get_document_source(document_id: str) -> FileResponse:
     )
 
 
+def source_path(row: sqlite3.Row, status_code: int = 409) -> Path:
+    try:
+        return resolve_source(row["stored_path"], UPLOADS_DIR)
+    except InvalidSource as error:
+        raise HTTPException(status_code=status_code, detail="Invalid source reference") from error
+
+
 @app.delete("/documents/{document_id}", status_code=204)
 def delete_document(document_id: str) -> None:
     row = get_document_row(document_id)
+    path = source_path(row)
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as error:
+        raise HTTPException(status_code=409, detail="Source could not be removed; retry after checking file permissions.") from error
     with get_connection() as connection:
         connection.execute("DELETE FROM facts WHERE document_id = ?", (document_id,))
         connection.execute("DELETE FROM documents WHERE id = ?", (document_id,))
         connection.commit()
-
-    Path(row["stored_path"]).unlink(missing_ok=True)
 
 
 @app.get("/facts", response_model=FactPageResponse)

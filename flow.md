@@ -1,8 +1,18 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 8 Phase 1 specification complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 8 Phase 2 implementation complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
 
 
+
+
+
+## Part 8 Phase 2 — Portable references in the running API
+
+Uploads now store a filename relative to configured uploads; document API responses resolve it to an absolute local path. Source access, reprocess, and delete use the same validator. Invalid metadata references appear as empty paths; source returns 404, process/delete 409 without mutations. Missing valid files retain earlier facts on failed reprocess; deletion can remove their metadata. Unlink failure leaves rows available for retry.
+
+Startup upgrades valid legacy collections at their original root in one transaction, preserving evidence and files. Unsafe/duplicate references abort migration; no basename remapping occurs. Back up before startup upgrade. Schema 3 can resolve against the configured root, but full relocated-backup verification remains Phase 3. Existing browser journeys and original source links are unchanged.
+
+Verification: 83 backend tests and real PDF/OCR browser/API integration pass; local collection untouched. Schema-3 implementation complete; Phase 3 recovery and tracked-file cleanup remain planned.
 
 
 ## Part 8 Phase 1 — Planned portable recovery journey

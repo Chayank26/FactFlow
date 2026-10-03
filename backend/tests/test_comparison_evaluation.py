@@ -56,7 +56,7 @@ def test_api_matches_offline_baseline_and_preserves_source_evidence():
             connection.execute('DELETE FROM documents')
             for side in ('left', 'right'):
                 source = case[side]
-                connection.execute('INSERT INTO documents (id, filename, size_bytes, stored_path, created_at, status) VALUES (?, ?, 0, ?, ?, ?)', (source['document_id'], side + '.pdf', '/unused', side, 'processed'))
+                connection.execute('INSERT INTO documents (id, filename, size_bytes, stored_path, created_at, status) VALUES (?, ?, 0, ?, ?, ?)', (source['document_id'], side + '.pdf', 'unused.pdf', side, 'processed'))
                 connection.execute('INSERT INTO facts (id, document_id, claim, source_page, source_text, created_at) VALUES (?, ?, ?, ?, ?, ?)', (side, source['document_id'], source['text'], source['page'], source['text'], side))
         response = client.get('/comparisons')
         assert response.status_code == 200
