@@ -1,10 +1,14 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 8 complete (all three phases) (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 9 Phase 1 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
 
+## Part 9 Phase 1 — Chunked copies and compensating cleanup
 
+No new tool or dependency was needed. Added app/upload_storage.py with bounded UploadFile reads, NamedTemporaryFile and same-directory os.replace. The copy reads no more than limit+1 bytes before rejection; temporary files are cleaned in finally. SQLite registration failure compensates by removing the published source. Schema 3 and absolute API response compatibility remain unchanged.
 
+This avoids a full-file bytes allocation in the handler, but installed Starlette multipart parsing/spooling precedes endpoint execution. A pre-parser body limiter/proxy would address a different boundary and is not implemented. Synchronous small writes/SQLite remain; no latency or total-memory guarantee. File/DB publication is not crash-atomic and cleanup needs working filesystem permissions. Queues and global extraction admission are deferred.
 
+Verification: 98 backend tests, including bounded/exact-limit copying and injected cancellation/storage/database failures, plus both real PDF/OCR browser workflows pass. Existing warnings remain. No frontend build/mock rerun for unchanged frontend code, dependency change, local-data mutation, or commit. Two Part 9 phases remain; detailed boundaries are in docs/ingestion-reliability.md.
 
 
 ## Part 8 Phase 3 — Process-isolated recovery fixtures

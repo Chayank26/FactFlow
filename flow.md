@@ -1,10 +1,14 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 8 complete (all three phases) (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 9 Phase 1 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
 
+## Part 9 Phase 1 — Complete upload publication and retry
 
+Multipart parsing/spooling → filename/type validation → bounded reads into temporary storage → size validation → completed source publication → document registration → native/OCR extraction. Oversize returns 413 without a source/row; handled storage/registration failure returns 500 and cleans copied files where unlink is available. Extraction failure after registration still retains the source and failed status. Successful UI journeys and source links are unchanged.
 
+The parser can consume resources before these handler checks; request ingress and global extraction admission remain unbounded by this phase. A killed process can leave temporary/unregistered files; a lost response may hide a committed upload, so inspect Documents before retrying. No automatic retry or durable queue is added.
 
+Verification: 98 backend tests and two real browser/API workflows pass. Part 9 Phase 1 complete; Phase 2 extraction admission/mutation coordination and Phase 3 failure/retry verification remain planned. Runtime schema and local data are unchanged.
 
 
 ## Part 8 Phase 3 — Verified restore at a new location

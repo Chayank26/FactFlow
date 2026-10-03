@@ -1,10 +1,18 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 8 complete (all three phases) (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 9 Phase 1 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
 
+## Part 9 Phase 1 — Bounded upload storage
 
+Started Part 9 local ingestion reliability in three phases: bounded upload storage, extraction admission/mutation coordination, then browser/API failure/retry verification and operations. This follows portable recovery because the upload handler still copied an entire file into memory and could leave sources after database registration failure.
 
+Added a 64-KiB chunk-copy helper with a same-directory temporary file and publication only after passing the existing 10-MiB limit. Oversized/interrupted/failed copies clean temporary files; handled SQLite registration failure removes the source and returns retry guidance. Extraction failure after registration retains its existing source/status behavior. Multipart parsing happens before the handler, so this is not a network/request-body resource cap.
 
+Verification: 98 backend tests and both real PDF/OCR browser/API workflows pass. New tests cover exact bytes/limit, bounded reads, oversized rejection, cancellation/read/write/publication failure, database connection/commit failure, and retry. Initial cleanup assertions included the shared fixture directory; corrected to a dedicated copy directory before passing. Existing dependency/color warnings remain. Documentation links and whitespace checks pass; no frontend build/mock rerun for unchanged client code.
+
+Updated README/runbook and docs/ingestion-reliability.md. No dependency/schema/local-data change or commit. Phase 1 complete; two phases remain. Process-crash cleanup, pre-parser body caps, and multi-process coordination are not claimed.
+
+Suggested commit message: `fix: bound upload copies and clean up failed storage`
 
 
 ## Part 8 Phase 3 — Verified recovery and repository hygiene

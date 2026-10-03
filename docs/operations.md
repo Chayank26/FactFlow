@@ -1,6 +1,6 @@
 # Local operations and deployment decision
 
-Updated for Part 8 Phase 3, 2026-10-03; the Part 7 recovery drill below is historical.
+Updated for Part 9 Phase 1, 2026-10-03; the Part 7 recovery drill below is historical.
 
 ## Scope decision
 
@@ -48,7 +48,7 @@ Before resuming work, check SQLite integrity and schema, then confirm Documents/
 
 ## Repository data caveat
 
-The six legacy runtime artifacts (database and five sample text uploads) have been removed from Git tracking with `git rm --cached`; their local files remain byte-for-byte unchanged and ignored. The removals are staged for the next commit; history was not rewritten. `git ls-files backend/data` now returns nothing. Do not force-add runtime files. This cleanup does not migrate the local database or remove old content from earlier commits.
+The six legacy runtime artifacts (database and five sample text uploads) have been removed from Git tracking with `git rm --cached`; their local files remain byte-for-byte unchanged and ignored. The files are no longer tracked; history was not rewritten. `git ls-files backend/data` now returns nothing. Do not force-add runtime files. This cleanup does not migrate the local database or remove old content from earlier commits.
 
 
 ## Troubleshooting and limits
@@ -62,7 +62,7 @@ The six legacy runtime artifacts (database and five sample text uploads) have be
 | Slow upload or comparison | Extraction has a 90-second document deadline, but no global concurrency bound. Dense comparisons remain quadratic and load all facts. See measured workload limits below. |
 | Stale evidence after failure/restart | Reload document status and inspect original PDF; retained facts can be from the earlier successful run. No extraction history or durable task queue exists. |
 
-Upload accepts at most 10 MB after reading the body into memory. Extraction allows 40 pages, 300-DPI rendering, 12 million pixels/page, and 20 seconds per OCR call. These are not a total-memory quota or throughput guarantee. Native/OCR evidence and comparisons require manual source review.
+Upload accepts at most 10 MiB using bounded handler reads and temporary-file publication. Multipart parsing/spooling still occurs before the handler; no whole-request resource cap is implemented. Extraction allows 40 pages, 300-DPI rendering, 12 million pixels/page, and 20 seconds per OCR call. These are not a total-memory quota or throughput guarantee. Native/OCR evidence and comparisons require manual source review.
 
 ## Verified schema-3 recovery procedure
 
@@ -80,4 +80,8 @@ Part 8 is complete. Current checks: **87 backend tests, 12 mocked desktop/mobile
 
 Reproduce with the README backend, browser mock, integration, and build commands. Run only the recovery cases from backend with `.venv/bin/python -m pytest -q tests/test_storage_recovery.py`. Tesseract with English data and locked Python dependencies are required for the real OCR fixtures. Ports remain 5189 for mocks and 5190/8029 for integration. All fixture storage is temporary; normal local data is never imported by the recovery probes.
 
-SHA-256 checks before/after untracking confirmed all six local files were preserved and ignored. No live-data migration, deployment, dependency change, or commit was performed. Local single-user scope remains; no Part 9 implementation is implied. See [storage acceptance gates](storage-portability-plan.md), [OCR measurements](ocr-plan.md), [collection benchmarks](collection-performance.md), and [comparison evaluation](comparison-quality.md) for limits.
+SHA-256 checks before/after untracking confirmed all six local files were preserved and ignored. No live-data migration, deployment, dependency change, or commit was performed. Local single-user scope remains. Part 9 Phase 1 now adds bounded upload copying and handled-failure cleanup; see the [ingestion plan and limits](ingestion-reliability.md). See [storage acceptance gates](storage-portability-plan.md), [OCR measurements](ocr-plan.md), [collection benchmarks](collection-performance.md), and [comparison evaluation](comparison-quality.md) for limits.
+
+## Part 9 Phase 1 checkpoint
+
+98 backend tests and both real integration workflows pass. Copy/storage failure removes temporary files; database registration failure removes the unpublished-to-metadata source, provided unlink succeeds. A successful registration followed by extraction failure still retains the source. File/DB publication is not crash-atomic; interrupted processes can leave orphan files. Inspect Documents before retrying a request with a lost response. Extraction admission and mutation coordination remain Phase 2; frontend/build results above are historical Part 8 checks.

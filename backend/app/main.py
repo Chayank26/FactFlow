@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from app.extraction import extract_pages
+from app.upload_storage import store_upload, UploadTooLarge
 from app.storage import InvalidSource, resolve_source, migrate_source_references
 from app.comparison_candidates import candidate_pairs, claim_tokens, normalized_claim
 
@@ -296,31 +297,29 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
     except InvalidSource as error:
         raise HTTPException(status_code=400, detail="Invalid filename") from error
 
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="The PDF exceeds the 10 MB upload limit")
-    file_path.write_bytes(content)
+    try:
+        size_bytes = await store_upload(file, file_path, MAX_UPLOAD_BYTES)
+    except UploadTooLarge as error:
+        raise HTTPException(status_code=413, detail=str(error)) from error
+    except OSError as error:
+        raise HTTPException(status_code=500, detail="The uploaded PDF could not be stored. Please retry.") from error
 
     created_at = datetime.now(timezone.utc).isoformat()
     status = "uploaded"
 
-    with get_connection() as connection:
-        connection.execute(
-            """
-            INSERT INTO documents (id, filename, size_bytes, content_type, stored_path, created_at, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                document_id,
-                safe_name,
-                len(content),
-                file.content_type,
-                file_path.name,
-                created_at,
-                status,
-            ),
-        )
-        connection.commit()
+    try:
+        with get_connection() as connection:
+            connection.execute(
+                """
+                INSERT INTO documents (id, filename, size_bytes, content_type, stored_path, created_at, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (document_id, safe_name, size_bytes, file.content_type, file_path.name, created_at, status),
+            )
+            connection.commit()
+    except sqlite3.Error as error:
+        file_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail="The uploaded PDF could not be registered. Please retry.") from error
 
     try:
         await run_in_threadpool(process_document, document_id, file_path)

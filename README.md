@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 8 is complete; Parts 4–7 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 9 Phase 1 is complete; Parts 4–8 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -9,7 +9,7 @@ A practice project for extracting grounded facts from PDFs and comparing their c
 - **Status:** a stored upload becomes `processed` only when at least one fact is retained; otherwise it remains stored as `extraction_failed`. Successful reprocessing replaces facts and their IDs. Failed reprocessing marks the document failed but preserves previous facts, which remain visible with an earlier-run warning in document details, Facts, and Comparisons. Failed reprocessing refreshes the document status; a successful retry clears the warning. If status cannot be fetched, the UI reports uncertainty.
 - **Facts:** server-side source filtering and SQL `LIKE` search over claim/source text. Browser pages contain 20 facts; API pages default to 50 and allow 1–100. Responses contain `items`, `total`, `limit`, and `offset`. Search uses SQL wildcard semantics (`%` and `_`), not full-text or semantic search.
 - **Comparisons:** derived across documents on each request, using the heuristic described below. Documents and Comparisons are paginated. A token index avoids many unrelated comparisons; dense collections can still require quadratic work.
-- **Local scope:** no accounts, authentication, background job queue, model calls, or public deployment setup. Extraction runs in a disposable process while upload/reprocess requests wait. The upload-size check currently occurs after reading the full upload into memory.
+- **Local scope:** no accounts, authentication, background job queue, model calls, or public deployment setup. Extraction runs in a disposable process while upload/reprocess requests wait. The upload handler copies in bounded chunks and rejects files over 10 MiB, but multipart parsing/spooling occurs before this check; this is not a whole-request resource cap.
 
 Navigation uses URL hashes; filters and selected-document state live in browser memory. Facts and Comparisons summary cards show results for current filters only in their active view. Inactive/loading/failed views show a dash, and successful empty results show zero. The Documents count is the latest loaded collection size; these are request-time snapshots, not live global metrics. Fact ordering is stable for unchanged records, but offset pages can shift when records change, and reprocessing changes IDs.
 
@@ -183,4 +183,8 @@ A reproducible evaluation covers 48 synthetic labeled evidence pairs. The select
 
 ## Part 8: storage portability and recovery
 
-All three Part 8 phases are complete: specification, implementation, and relocation/recovery verification. The [migration plan and acceptance gates](docs/storage-portability-plan.md) define portable database references while preserving API compatibility. Schema 3 now stores filename-only references and validates source access, reprocessing, and deletion through one resolver. Invalid references return 404 for source access and 409 for process/delete; metadata hides invalid paths. Failed file deletion preserves rows for retry. Recovery verification and repository hygiene are complete. Existing local data was preserved byte-for-byte and has not been migrated by this work. Git removals are staged; no commit was created.
+All three Part 8 phases are complete: specification, implementation, and relocation/recovery verification. The [migration plan and acceptance gates](docs/storage-portability-plan.md) define portable database references while preserving API compatibility. Schema 3 now stores filename-only references and validates source access, reprocessing, and deletion through one resolver. Invalid references return 404 for source access and 409 for process/delete; metadata hides invalid paths. Failed file deletion preserves rows for retry. Recovery verification and repository hygiene are complete. Existing local data was preserved byte-for-byte and has not been migrated by this work. Runtime files remain locally available and are no longer tracked.
+
+## Part 9: local ingestion reliability
+
+Phase 1 is complete: bounded upload copying, temporary-file cleanup, and cleanup after failed database registration. Two phases remain: extraction admission/mutation coordination, then failure/retry verification and operations. See the [implementation, tests, and remaining resource limits](docs/ingestion-reliability.md).
