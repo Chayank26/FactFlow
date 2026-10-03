@@ -19,5 +19,5 @@ def test_upload_and_list_documents():
 
     list_response = client.get("/documents")
     assert list_response.status_code == 200, list_response.text
-    docs = list_response.json()
+    docs = list_response.json()["items"]
     assert any(doc["filename"] == "sample.pdf" for doc in docs)

@@ -1,6 +1,19 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 6 complete through Phase 3 (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 7 Phase 1 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 7 Phase 1 — Collection performance and pagination
+
+Started Part 7's three-phase plan: collection performance, labeled comparison evaluation, and operational reconciliation. Documents and Comparisons now use validated page envelopes with totals (default 50, maximum 100); browser lists request 20. Added document/comparison navigation and filename-searchable paginated source selectors. This deliberately changes the two old array API responses; repository clients/tests and README now use items/total. Source status travels with fact/comparison evidence so pagination does not hide retained-evidence warnings.
+
+Replaced repeated all-pair tokenization with cached tokens and token/exact-wording postings, preserving classification and deterministic pair ordering. Only page-sized comparison models are constructed; exact totals still enumerate all candidate matches. Dense inputs remain quadratic, and all fact rows are still loaded per request.
+
+Verification: 56 backend tests, 12 mocked desktop/mobile checks, real PDF/OCR integration, frontend build, and whitespace checks pass. Reference-equivalence tests preserve the old rule, including single-term agreements; pagination tests cover all 300 pairs for 25 documents and filtered totals. Browser checks cover later document/source pages and comparison-filter resets. Synthetic benchmark at 2,000 sparse facts measured 1.707s exhaustive versus 0.028s indexed matching with identical output; dense 1,000-fact matching remained 0.183s. Methodology/raw data are in docs/collection-performance.md and docs/collection-benchmark.json. These are local single-run results, not an SLA.
+
+Suggested commit message: `perf: paginate collections and index comparison candidates`
+
+Phase 1 is complete; two Part 7 phases remain. No git commit was created.
+
 
 ## Part 6 Phase 3 — Measured processing experience
 
@@ -106,7 +119,7 @@ All three Part 5 phases are complete; their checkpoints are recorded above. Rema
 
 ### Part 7 — Larger collections and evaluated comparisons
 
-1. Measure retrieval and comparison cost on a representative collection; bound document/comparison responses and reduce unnecessary pair work.
+1. **Complete:** Measure retrieval and comparison cost on a representative collection; bound document/comparison responses and reduce unnecessary pair work.
 2. Build a labeled comparison evaluation set before considering semantic matching or a model. Checkpoint: measured improvements and traceable evidence, with explicit errors/limitations.
 3. Reconcile operational documentation and decide whether deployment is needed. Authentication, storage portability, upload resource limits, and deployment controls belong in a separate deployment milestone if public/multi-user use is chosen.
 

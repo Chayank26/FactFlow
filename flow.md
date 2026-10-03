@@ -1,6 +1,17 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 6 complete through Phase 3 (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 7 Phase 1 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 7 Phase 1 — Bounded collection browsing
+
+**User journey:** Documents → browse 20-item pages → open/reprocess/delete a source. Facts/Comparisons → search filenames or page source options → select a source → search facts or filter comparison relationships → page results and inspect linked evidence. Source selection is independent of the currently visible Documents page. Changing comparison filters resets its page; shrinking results recover to a valid offset.
+
+**Data flow:** document query → SQLite count plus stable limited rows → items/total/limit/offset. Comparison query → facts joined to source metadata/status → token and exact-wording candidate index → unchanged agreement/difference rule → filtered total plus limited comparison cards. Fact and comparison responses carry source status, so earlier-run warnings no longer depend on a source being in the loaded document page. GET /documents and /comparisons change from arrays to envelopes; all current clients use the new contract.
+
+**Current boundaries:** browser page sizes are 20, API maximum 100. Source search is filename LIKE, not full-text search. Comparisons remain derived; exact totals require full candidate enumeration and dense collections remain quadratic. Backend comparison memory still scales with all facts, and changing data can shift offsets. Native/OCR processing and source PDFs are unchanged.
+
+**Verification:** 56 backend tests, 12 mocked browser checks, real PDF/OCR integration, frontend build, and whitespace checks pass. Synthetic benchmarks and assumptions are recorded in docs/collection-performance.md. Part 7 Phase 2 quality evaluation and Phase 3 operational reconciliation remain planned.
+
 
 ## Part 6 Phase 3 — Busy state, completion, and measured limits
 

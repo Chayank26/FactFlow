@@ -23,7 +23,7 @@ def test_comparisons_relate_similar_claims_with_source_context():
 
     assert response.status_code == 200, response.text
     comparison = next(
-        item for item in response.json()
+        item for item in response.json()["items"]
         if {item["left_document_id"], item["right_document_id"]} == {first_id, second_id}
     )
     assert comparison["relationship"] == "difference"

@@ -27,7 +27,7 @@ def test_comparison_classification_preserves_meaningful_wording(left, right, exp
     second = upload_pdf("second.pdf", right)
     response = client.get("/comparisons")
     assert response.status_code == 200
-    pairs = response.json()
+    pairs = response.json()["items"]
     if expected is None:
         assert pairs == []
         return
@@ -37,12 +37,12 @@ def test_comparison_classification_preserves_meaningful_wording(left, right, exp
     assert {pair["left_document_id"], pair["right_document_id"]} == {first, second}
     assert pair["left_page"] == pair["right_page"] == 1
     assert {pair["left_claim"], pair["right_claim"]} == {pair["left_source_text"], pair["right_source_text"]}
-    assert client.get("/comparisons", params={"relationship": expected, "document_id": first}).json() == pairs
+    assert client.get("/comparisons", params={"relationship": expected, "document_id": first}).json()["items"] == pairs
     other = "difference" if expected == "agreement" else "agreement"
-    assert client.get("/comparisons", params={"relationship": other}).json() == []
-    assert client.get("/comparisons").json() == pairs
+    assert client.get("/comparisons", params={"relationship": other}).json()["items"] == []
+    assert client.get("/comparisons").json()["items"] == pairs
 
 
 def test_similar_claims_in_one_document_are_not_compared():
     upload_pdf("single.pdf", "Revenue increased 20 percent. Revenue increased 30 percent.")
-    assert client.get("/comparisons").json() == []
+    assert client.get("/comparisons").json()["items"] == []

@@ -31,7 +31,7 @@ const navigate = async (page, name) => {
 test('real PDF upload, extraction, pagination, comparison, reprocess, and deletion', async ({ page, request }) => {
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
-  expect(await (await request.get(`${api}/documents`)).json()).toEqual([])
+  expect((await (await request.get(`${api}/documents`)).json()).items).toEqual([])
   await page.goto('/')
   await expect(page.getByText('Backend connected', { exact: true })).toBeVisible()
   const claims = Array.from({ length: 25 }, (_, i) => `Revenue metric ${i} increased significantly.`)
@@ -113,16 +113,16 @@ test('real PDF upload, extraction, pagination, comparison, reprocess, and deleti
     await expect(page.getByRole('button', { name: `View ${document.filename}`, exact: true })).toHaveCount(0)
     expect(existsSync(document.stored_path)).toBe(false)
   }
-  expect(await (await request.get(`${api}/documents`)).json()).toEqual([])
+  expect((await (await request.get(`${api}/documents`)).json()).items).toEqual([])
   expect((await (await request.get(`${api}/facts`)).json()).total).toBe(0)
-  expect(await (await request.get(`${api}/comparisons`)).json()).toEqual([])
+  expect((await (await request.get(`${api}/comparisons`)).json()).items).toEqual([])
   const scanPath = test.info().outputPath('scan.pdf')
   execFileSync('../backend/.venv/bin/python', ['-m', 'tests.ocr_fixtures', scanPath], { cwd: '../backend' })
   await page.locator('input[type=file]').first().setInputFiles(scanPath)
   await page.getByRole('button', { name: 'View scan.pdf', exact: true }).click()
   await expect(detail).toContainText('Revenue increased 20 percent.')
   await expect(detail).toContainText('OCR — verify against PDF')
-  const scanned = (await (await request.get(`${api}/documents`)).json())[0]
+  const scanned = (await (await request.get(`${api}/documents`)).json()).items[0]
   expect(scanned.status).toBe('processed')
   expect((await (await request.get(`${api}/facts?document_id=${scanned.id}`)).json()).items[0].extraction_method).toBe('ocr')
   expect(await (await request.get(`${api}/documents/${scanned.id}/source`)).body()).toEqual(readFileSync(scanPath))

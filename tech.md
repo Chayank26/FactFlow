@@ -1,6 +1,19 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 6 complete through Phase 3 (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 7 Phase 1 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 7 Phase 1 — Token postings and shared pagination contracts
+
+**No new dependency or schema migration was needed.** Used Python dictionaries/sets for token/exact-wording postings and reused FastAPI page validation, SQLite LIMIT/OFFSET/counts, and React state/fetch. A shared SourceSelect component independently pages/searches filenames rather than loading the entire source catalog. Document/comparison defaults are 50 items with maximum 100; browser requests 20.
+
+**Optimization correctness:** precomputed tokens/normalized wording replace repeated parsing. Candidate pairs share at least two meaningful tokens or exact normalized wording, preserving single-term agreements. Ordered candidate traversal retains the previous pair IDs/orientation. Filtering precedes total/page selection; full response models are constructed only for the requested page. Exact counts and dense postings still cost quadratic time in the worst case. No cache, semantic model, cursor pagination, or search service was added.
+
+**Contract/provenance:** GET /documents and /comparisons now return page envelopes instead of arrays; this is an explicit client-breaking change documented in README. Facts and comparison sides include source status so evidence warnings stay correct without unbounded document retrieval. Schema/persistence remains unchanged.
+
+**Measurement:** isolated temporary SQLite benchmark compares indexed matches against the previous exhaustive reference and records bounded API timings/payload bytes. At 2,000 sparse facts, complete matching measured 1.707s versus 0.028s; dense 1,000-fact indexed matching measured 0.183s. Single-run TestClient timings omit network transport and do not measure peak memory/concurrency. Raw JSON and reproduction script are committed artifacts.
+
+**Verification:** 56 backend tests (including reference equivalence, page coverage/validation, and source status), 12 mocked desktop/mobile checks, real PDF/OCR integration, frontend build, and whitespace checks pass. Existing dependency warnings remain. Comparison quality evaluation is Phase 2, not inferred from performance improvements.
+
 
 ## Part 6 Phase 3 — Evidence-based decision to retain request-bound processing
 

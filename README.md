@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Parts 4, 5, and 6 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 7 Phase 1 is complete; Parts 4, 5, and 6 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -8,7 +8,7 @@ A practice project for extracting grounded facts from PDFs and comparing their c
 - **Extraction:** local `pypdf` text extraction plus Tesseract OCR for pages with raster images or no native text, followed by sentence splitting, noise filtering, and document-level deduplication. Facts retain document ID, page number, and the extracted claim as source text. This is not a full surrounding passage or an independent truth check. Each evidence item links to the stored PDF and its page in a new tab. Facts record `native` or `ocr` extraction method; OCR evidence is labeled for manual verification.
 - **Status:** a stored upload becomes `processed` only when at least one fact is retained; otherwise it remains stored as `extraction_failed`. Successful reprocessing replaces facts and their IDs. Failed reprocessing marks the document failed but preserves previous facts, which remain visible with an earlier-run warning in document details, Facts, and Comparisons. Failed reprocessing refreshes the document status; a successful retry clears the warning. If status cannot be fetched, the UI reports uncertainty.
 - **Facts:** server-side source filtering and SQL `LIKE` search over claim/source text. Browser pages contain 20 facts; API pages default to 50 and allow 1–100. Responses contain `items`, `total`, `limit`, and `offset`. Search uses SQL wildcard semantics (`%` and `_`), not full-text or semantic search.
-- **Comparisons:** derived across documents on each request, using the heuristic described below. Document and comparison lists remain unpaginated; comparison work grows quadratically with the number of facts.
+- **Comparisons:** derived across documents on each request, using the heuristic described below. Documents and Comparisons are paginated. A token index avoids many unrelated comparisons; dense collections can still require quadratic work.
 - **Local scope:** no accounts, authentication, background job queue, model calls, or public deployment setup. Extraction runs in a disposable process while upload/reprocess requests wait. The upload-size check currently occurs after reading the full upload into memory.
 
 Navigation uses URL hashes; filters and selected-document state live in browser memory. Facts and Comparisons summary cards show results for current filters only in their active view. Inactive/loading/failed views show a dash, and successful empty results show zero. The Documents count is the latest loaded collection size; these are request-time snapshots, not live global metrics. Fact ordering is stable for unchanged records, but offset pages can shift when records change, and reprocessing changes IDs.
@@ -96,7 +96,7 @@ Alternatively, use installed Google Chrome without downloading Chromium:
 PLAYWRIGHT_CHANNEL=chrome npm run test:e2e
 ```
 
-Playwright starts and stops its own Vite server on port **5189** (the port must be free), uses a fixed API URL for interception, and runs five scenarios at desktop and mobile widths for ten checks. No backend server is needed: API responses are mocked, uploads use test bytes, and local documents are untouched. Backend pytest separately validates real PDF extraction and persistence.
+Playwright starts and stops its own Vite server on port **5189** (the port must be free), uses a fixed API URL for interception, and runs six scenarios at desktop and mobile widths for twelve checks. No backend server is needed: API responses are mocked, uploads use test bytes, and local documents are untouched. Backend pytest separately validates real PDF extraction and persistence.
 
 Coverage includes upload, evidence pagination, reprocess page recovery, cancel/confirm deletion, fact search/source filters, comparison filters and evidence, browser Back/reload, failure messages, health/evidence retry, and a mobile overflow check. Failed tests retain traces under ignored `frontend/test-results/`; inspect a trace with `npx playwright show-trace <trace.zip>`. Browser exceptions fail the test. This currently checks Chromium/Chrome at two viewport sizes, not every browser or device.
 
@@ -112,13 +112,19 @@ PLAYWRIGHT_CHANNEL=chrome npm run test:integration
 
 This separate suite starts a real FastAPI server on **8029** and Vite on **5190**, and refuses to reuse running servers; both ports must be free. The Python test launcher sets a new temporary data directory before importing the app and adds only the test frontend origin to its CORS middleware. Normal app configuration is unchanged. Playwright stops both servers, and graceful backend shutdown removes temporary storage. A forced process kill may leave a temporary directory behind, never the normal app database.
 
-The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop lifecycle workflow including extraction failure/recovery and real scanned-PDF upload; the separate ten-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
+The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop lifecycle workflow including extraction failure/recovery and real scanned-PDF upload; the separate twelve-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
 
 ## Inspect original sources
 
 Use **Open PDF · page N (new tab)** in document details, Facts, or either comparison source. The link requests `GET /documents/{id}/source` and passes `#page=N` to the browser's PDF viewer. The API returns the original stored bytes inline; page navigation depends on viewer support and may require manual navigation. Missing/deleted sources return 404. Source access is limited to registered files inside the configured upload directory.
 
 The PDF is the currently stored file, not a versioned snapshot of an extraction run. Earlier-run evidence warnings still apply after failed reprocessing; replacing source bytes externally can make that evidence differ from the current file. Source links open original bytes, not a searchable OCR derivative; they do not add sentence highlighting or surrounding-passage extraction. This remains a local app without authentication.
+
+## Collection pagination and performance
+
+All three list APIs (`GET /documents`, `/facts`, `/comparisons`) return `{items, total, limit, offset}`. **Documents and Comparisons no longer return arrays.** Limits default to 50, allow 1–100, and the browser requests 20 per page. Documents/Comparisons offer Previous/Next controls; source filters have filename search and independent paging so every source remains reachable.
+
+Comparison matching uses a token index while preserving the existing relationship rule. Exact totals still require examining candidate matches, and dense collections can remain expensive. See [benchmark methodology, results, and reproduction](docs/collection-performance.md). Source processing status is carried with evidence, independent of the document list page.
 
 ## Comparison limits
 

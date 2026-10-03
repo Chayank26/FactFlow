@@ -53,6 +53,8 @@ def test_failed_reprocessing_preserves_evidence_until_successful_retry():
     path.write_bytes(b'broken PDF')
     assert client.post(f'/documents/{document_id}/process').status_code == 422
     assert client.get(f'/documents/{document_id}').json()['status'] == 'extraction_failed'
+    for fact in before['items']:
+        fact['document_status'] = 'extraction_failed'
     assert client.get('/facts', params={'document_id': document_id}).json() == before
     path.write_bytes(original_bytes)
     assert client.post(f'/documents/{document_id}/process').json()['status'] == 'processed'

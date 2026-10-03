@@ -19,7 +19,12 @@ async function setup(page, { empty = false } = {}) {
       expect(request.headers()['content-type']).toContain('multipart/form-data')
       expect(request.postDataBuffer().toString()).toContain('upload.pdf')
       const created = doc('upload'); state.docs.unshift(created); body = created
-    } else if (url.pathname === '/documents') body = state.docs
+    } else if (url.pathname === '/documents') {
+      const items = state.docs.filter(document => document.filename.includes(url.searchParams.get('search') || ''))
+      const offset = Number(url.searchParams.get('offset') || 0)
+      const limit = Number(url.searchParams.get('limit') || 50)
+      body = { items: items.slice(offset, offset + limit), total: items.length, limit, offset }
+    }
     else if (url.pathname.endsWith('/process')) { state.count = 3; body = state.docs[0] }
     else if (request.method() === 'DELETE') {
       state.docs = state.docs.filter(document => url.pathname !== `/documents/${document.id}`)
@@ -35,6 +40,11 @@ async function setup(page, { empty = false } = {}) {
     } else if (url.pathname === '/comparisons') {
       body = ['agreement', 'difference'].filter(relationship => !url.searchParams.get('relationship') || relationship === url.searchParams.get('relationship')).map(relationship => ({ id: relationship, relationship, summary: 'Review both passages.', left_document_id: 'alpha', left_document_name: 'alpha.pdf', left_claim: 'Revenue increased 20 percent.', left_page: 1, left_source_text: 'Left source passage', right_document_id: 'beta', right_document_name: 'beta.pdf', right_claim: 'Revenue increased 30 percent.', right_page: 2, right_source_text: 'Right source passage' }))
     } else throw new Error(`Unexpected API request: ${request.method()} ${url}`)
+    if (url.pathname === '/comparisons') {
+      const offset = Number(url.searchParams.get('offset') || 0)
+      const limit = Number(url.searchParams.get('limit') || 50)
+      body = { items: body.slice(offset, offset + limit), total: body.length, offset, limit }
+    }
     await route.fulfill({ json: body })
   })
   return state
@@ -190,4 +200,38 @@ test('processing notice persists across navigation and failure unlocks retry', a
   } finally {
     finish()
   }
+})
+
+test('document and comparison pages stay bounded and later sources are selectable', async ({ page }) => {
+  const state = await setup(page)
+  state.docs = Array.from({ length: 25 }, (_, i) => ({ ...state.docs[0], id: `doc${i}`, filename: `source-${String(i).padStart(2, '0')}.pdf` }))
+  await page.route('**/comparisons?*', async route => {
+    const url = new URL(route.request().url())
+    const all = Array.from({ length: 45 }, (_, i) => ({ id: String(i), relationship: i % 2 ? 'agreement' : 'difference', summary: 'Review sources', left_document_id: 'doc0', right_document_id: 'doc24', left_document_name: 'source-00.pdf', right_document_name: 'source-24.pdf', left_claim: `Claim ${i}`, right_claim: `Other ${i}`, left_source_text: 'First passage', right_source_text: 'Second passage', left_page: 1, right_page: 2 })).filter(item => !url.searchParams.get('relationship') || item.relationship === url.searchParams.get('relationship'))
+    const offset = Number(url.searchParams.get('offset'))
+    const limit = Number(url.searchParams.get('limit'))
+    await route.fulfill({ json: { items: all.slice(offset, offset + limit), total: all.length, offset, limit } })
+  })
+  await page.goto('/')
+  await expect(page.locator('.document-card')).toHaveCount(20)
+  await page.getByRole('button', { name: 'Next documents', exact: true }).click()
+  await expect(page.locator('.document-card')).toHaveCount(5)
+  await expect(page.getByRole('button', { name: 'View source-24.pdf', exact: true })).toBeVisible()
+  await expect(page.locator('.stat-card').filter({ hasText: 'Documents' }).locator('.stat-number')).toHaveText('25')
+  await navigate(page, 'Facts')
+  await page.getByRole('button', { name: 'Next sources', exact: true }).click()
+  await page.getByRole('combobox', { name: 'Source', exact: true }).selectOption('doc24')
+  await expect.poll(() => state.requests.some(request => request.path === '/facts' && request.query.get('document_id') === 'doc24')).toBe(true)
+  await page.getByRole('textbox', { name: 'Find source by filename' }).fill('source-03')
+  await page.getByRole('combobox', { name: 'Source', exact: true }).selectOption('doc3')
+  await navigate(page, 'Comparisons')
+  await expect(page.locator('.comparison-card')).toHaveCount(20)
+  await page.getByRole('button', { name: 'Next comparisons', exact: true }).click()
+  await expect(page.getByText('Showing 21–40 of 45 comparisons')).toBeVisible()
+  await page.getByRole('button', { name: 'Next comparisons', exact: true }).click()
+  await expect(page.locator('.comparison-card')).toHaveCount(5)
+  await expect(page.getByRole('button', { name: 'Next comparisons', exact: true })).toBeDisabled()
+  await page.getByRole('combobox', { name: 'Relationship' }).selectOption('agreement')
+  await expect(page.getByText('Showing 1–20 of 22 comparisons')).toBeVisible()
+  await expect(page.locator('.stat-card').filter({ hasText: 'Comparisons' }).locator('.stat-number')).toHaveText('22')
 })

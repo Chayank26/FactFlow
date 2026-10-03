@@ -1,0 +1,122 @@
+{
+  "machine": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.9",
+  "cases": [
+    {
+      "facts": 200,
+      "documents": 100,
+      "shape": "sparse-ten-claim-topics",
+      "all_unordered_pairs": 19900,
+      "matching_pairs": 900,
+      "exhaustive_seconds": 0.017069,
+      "indexed_seconds": 0.000797,
+      "endpoints": {
+        "/documents": {
+          "seconds": 0.011716,
+          "items": 20,
+          "total": 100,
+          "bytes": 3315
+        },
+        "/facts": {
+          "seconds": 0.001209,
+          "items": 20,
+          "total": 200,
+          "bytes": 4065
+        },
+        "/comparisons": {
+          "seconds": 0.003339,
+          "items": 20,
+          "total": 900,
+          "bytes": 12285
+        }
+      }
+    },
+    {
+      "facts": 1000,
+      "documents": 100,
+      "shape": "sparse-ten-claim-topics",
+      "all_unordered_pairs": 499500,
+      "matching_pairs": 4500,
+      "exhaustive_seconds": 0.427656,
+      "indexed_seconds": 0.008471,
+      "endpoints": {
+        "/documents": {
+          "seconds": 0.002684,
+          "items": 20,
+          "total": 100,
+          "bytes": 3315
+        },
+        "/facts": {
+          "seconds": 0.001914,
+          "items": 20,
+          "total": 1000,
+          "bytes": 4066
+        },
+        "/comparisons": {
+          "seconds": 0.014012,
+          "items": 20,
+          "total": 4500,
+          "bytes": 12286
+        }
+      }
+    },
+    {
+      "facts": 2000,
+      "documents": 100,
+      "shape": "sparse-ten-claim-topics",
+      "all_unordered_pairs": 1999000,
+      "matching_pairs": 9000,
+      "exhaustive_seconds": 1.706782,
+      "indexed_seconds": 0.027581,
+      "endpoints": {
+        "/documents": {
+          "seconds": 0.001244,
+          "items": 20,
+          "total": 100,
+          "bytes": 3315
+        },
+        "/facts": {
+          "seconds": 0.001059,
+          "items": 20,
+          "total": 2000,
+          "bytes": 4066
+        },
+        "/comparisons": {
+          "seconds": 0.03395,
+          "items": 20,
+          "total": 9000,
+          "bytes": 12286
+        }
+      }
+    },
+    {
+      "facts": 1000,
+      "documents": 100,
+      "shape": "dense-identical",
+      "all_unordered_pairs": 499500,
+      "matching_pairs": 495000,
+      "exhaustive_seconds": 0.47555,
+      "indexed_seconds": 0.182837,
+      "endpoints": {
+        "/documents": {
+          "seconds": 0.00115,
+          "items": 20,
+          "total": 100,
+          "bytes": 3315
+        },
+        "/facts": {
+          "seconds": 0.000955,
+          "items": 20,
+          "total": 1000,
+          "bytes": 4386
+        },
+        "/comparisons": {
+          "seconds": 0.215917,
+          "items": 20,
+          "total": 495000,
+          "bytes": 13319
+        }
+      }
+    }
+  ]
+}

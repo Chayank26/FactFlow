@@ -12,7 +12,7 @@ def test_comparisons_filter_by_document_and_relationship():
 
     document_response = client.get("/comparisons", params={"document_id": first_id})
     assert document_response.status_code == 200, document_response.text
-    document_results = document_response.json()
+    document_results = document_response.json()["items"]
     assert document_results
     assert all(
         first_id in {item["left_document_id"], item["right_document_id"]}
@@ -21,7 +21,7 @@ def test_comparisons_filter_by_document_and_relationship():
 
     relationship_response = client.get("/comparisons", params={"relationship": "agreement"})
     assert relationship_response.status_code == 200, relationship_response.text
-    assert all(item["relationship"] == "agreement" for item in relationship_response.json())
+    assert all(item["relationship"] == "agreement" for item in relationship_response.json()["items"])
 
     invalid_response = client.get("/comparisons", params={"relationship": "unknown"})
     assert invalid_response.status_code == 400

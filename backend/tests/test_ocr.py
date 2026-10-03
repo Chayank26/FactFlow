@@ -103,6 +103,8 @@ def test_document_timeout_retains_previous_evidence(monkeypatch):
     response = client.post(f"/documents/{document['id']}/process")
     assert response.status_code == 422
     assert 'document limit' in response.json()['detail']
+    for fact in before:
+        fact['document_status'] = 'extraction_failed'
     assert facts(document) == before
 
 

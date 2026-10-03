@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from app.extraction import extract_pages
+from app.comparison_candidates import candidate_pairs
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("FACTFLOW_DATA_DIR", str(BASE_DIR / "data"))).resolve()
@@ -102,11 +103,19 @@ class DocumentResponse(BaseModel):
     extraction_error: str | None = None
 
 
+class DocumentPageResponse(BaseModel):
+    items: list[DocumentResponse]
+    total: int
+    limit: int
+    offset: int
+
+
 class FactResponse(BaseModel):
     id: str
     document_id: str
     claim: str
     extraction_method: str = "native"
+    document_status: str | None = None
     source_page: int
     source_text: str
     created_at: str
@@ -125,16 +134,25 @@ class ComparisonResponse(BaseModel):
     summary: str
     left_document_id: str
     left_document_name: str
+    left_document_status: str | None = None
     left_extraction_method: str = "native"
     left_claim: str
     left_page: int
     left_source_text: str
     right_document_id: str
     right_document_name: str
+    right_document_status: str | None = None
     right_extraction_method: str = "native"
     right_claim: str
     right_page: int
     right_source_text: str
+
+
+class ComparisonPageResponse(BaseModel):
+    items: list[ComparisonResponse]
+    total: int
+    limit: int
+    offset: int
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -307,14 +325,22 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
     return document_from_row(get_document_row(document_id))
 
 
-@app.get("/documents", response_model=list[DocumentResponse])
-def list_documents() -> list[DocumentResponse]:
+@app.get("/documents", response_model=DocumentPageResponse)
+def list_documents(
+    search: str = "",
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> DocumentPageResponse:
+    where = " WHERE filename LIKE ?" if search.strip() else ""
+    parameters = [f"%{search.strip()}%"] if where else []
     with get_connection() as connection:
+        total = connection.execute(f"SELECT COUNT(*) FROM documents{where}", parameters).fetchone()[0]
         rows = connection.execute(
-            "SELECT id, filename, size_bytes, content_type, stored_path, created_at, status, extraction_error FROM documents ORDER BY created_at DESC"
+            "SELECT id, filename, size_bytes, content_type, stored_path, created_at, status, extraction_error "
+            f"FROM documents{where} ORDER BY created_at DESC, id ASC LIMIT ? OFFSET ?",
+            [*parameters, limit, offset],
         ).fetchall()
-
-    return [document_from_row(row) for row in rows]
+    return DocumentPageResponse(items=[document_from_row(row) for row in rows], total=total, limit=limit, offset=offset)
 
 
 @app.get("/documents/{document_id}", response_model=DocumentResponse)
@@ -375,7 +401,8 @@ def list_facts(
     where_clause = f" WHERE {' AND '.join(conditions)}" if conditions else ""
     count_query = f"SELECT COUNT(*) FROM facts{where_clause}"
     query = (
-        "SELECT id, document_id, claim, source_page, source_text, created_at, extraction_method "
+        "SELECT id, document_id, claim, source_page, source_text, created_at, extraction_method, "
+        "(SELECT status FROM documents WHERE documents.id = facts.document_id) AS document_status "
         f"FROM facts{where_clause} ORDER BY created_at DESC, source_page ASC, id ASC LIMIT ? OFFSET ?"
     )
 
@@ -390,6 +417,7 @@ def list_facts(
                 document_id=row["document_id"],
                 claim=row["claim"],
                 extraction_method=row["extraction_method"],
+                document_status=row["document_status"],
                 source_page=row["source_page"],
                 source_text=row["source_text"],
                 created_at=row["created_at"],
@@ -413,11 +441,13 @@ def normalized_claim(claim: str) -> str:
     return " ".join(claim.casefold().split()).rstrip(".!?")
 
 
-@app.get("/comparisons", response_model=list[ComparisonResponse])
+@app.get("/comparisons", response_model=ComparisonPageResponse)
 def list_comparisons(
     document_id: str | None = None,
     relationship: str | None = None,
-) -> list[ComparisonResponse]:
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> ComparisonPageResponse:
     if relationship not in (None, "agreement", "difference"):
         raise HTTPException(status_code=400, detail="Unsupported comparison relationship")
 
@@ -425,7 +455,7 @@ def list_comparisons(
         rows = connection.execute(
             """
             SELECT facts.id, facts.document_id, facts.claim, facts.source_page, facts.source_text, facts.extraction_method,
-                   documents.filename AS document_name
+                   documents.filename AS document_name, documents.status AS document_status
             FROM facts
             JOIN documents ON documents.id = facts.document_id
             ORDER BY facts.created_at DESC, facts.source_page ASC, facts.id ASC
@@ -433,50 +463,39 @@ def list_comparisons(
         ).fetchall()
 
     comparisons: list[ComparisonResponse] = []
-    for index, left in enumerate(rows):
-        left_tokens = claim_tokens(left["claim"])
-        if not left_tokens:
+    total = 0
+    for left_index, right_index, relationship_type in candidate_pairs(rows, claim_tokens, normalized_claim, document_id):
+        if relationship and relationship != relationship_type:
             continue
-        for right in rows[index + 1:]:
-            if left["document_id"] == right["document_id"]:
-                continue
-            if document_id and document_id not in (left["document_id"], right["document_id"]):
-                continue
-
-            right_tokens = claim_tokens(right["claim"])
-            if not right_tokens:
-                continue
-            shared_tokens = left_tokens & right_tokens
-            similarity = len(shared_tokens) / max(len(left_tokens), len(right_tokens))
-            if normalized_claim(left["claim"]) == normalized_claim(right["claim"]):
-                relationship_type = "agreement"
-                summary = "Matching wording after normalizing case, spacing, and final sentence punctuation; not independent verification."
-            elif len(shared_tokens) >= 2 and similarity >= 0.5:
-                relationship_type = "difference"
-                summary = "Shared terms with different wording. Review both passages; this may not be a contradiction."
-            else:
-                continue
-            if relationship and relationship != relationship_type:
-                continue
-
-            comparisons.append(
-                ComparisonResponse(
-                    id=f"{left['id']}:{right['id']}",
-                    relationship=relationship_type,
-                    summary=summary,
-                    left_document_id=left["document_id"],
-                    left_document_name=left["document_name"],
-                    left_claim=left["claim"],
-                    left_extraction_method=left["extraction_method"],
-                    left_page=left["source_page"],
-                    left_source_text=left["source_text"],
-                    right_document_id=right["document_id"],
-                    right_document_name=right["document_name"],
-                    right_claim=right["claim"],
-                    right_extraction_method=right["extraction_method"],
-                    right_page=right["source_page"],
-                    right_source_text=right["source_text"],
-                )
+        total += 1
+        if total <= offset or len(comparisons) >= limit:
+            continue
+        left, right = rows[left_index], rows[right_index]
+        summary = (
+            "Matching wording after normalizing case, spacing, and final sentence punctuation; not independent verification."
+            if relationship_type == "agreement" else
+            "Shared terms with different wording. Review both passages; this may not be a contradiction."
+        )
+        comparisons.append(
+            ComparisonResponse(
+                id=f"{left['id']}:{right['id']}",
+                relationship=relationship_type,
+                summary=summary,
+                left_document_id=left["document_id"],
+                left_document_name=left["document_name"],
+                left_claim=left["claim"],
+                left_document_status=left["document_status"],
+                left_extraction_method=left["extraction_method"],
+                left_page=left["source_page"],
+                left_source_text=left["source_text"],
+                right_document_id=right["document_id"],
+                right_document_name=right["document_name"],
+                right_claim=right["claim"],
+                right_document_status=right["document_status"],
+                right_extraction_method=right["extraction_method"],
+                right_page=right["source_page"],
+                right_source_text=right["source_text"],
             )
+        )
 
-    return comparisons
+    return ComparisonPageResponse(items=comparisons, total=total, limit=limit, offset=offset)

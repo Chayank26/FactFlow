@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { ArrowRight, ArrowUpRight, Check, ChevronRight, FileText, Files, GitCompareArrows, Layers3, Link2, RefreshCw, Search, Sparkles, Trash2, Upload, Waypoints, X } from 'lucide-react'
 import BackendStatus from './BackendStatus'
+import SourceSelect from './SourceSelect'
 
 type View = 'documents' | 'facts' | 'comparisons'
 type DocumentRecord = {
@@ -20,12 +21,14 @@ type ComparisonRecord = {
   summary: string
   left_document_id: string
   left_document_name: string
+  left_document_status?: string
   left_claim: string
   left_extraction_method?: string
   left_page: number
   left_source_text: string
   right_document_id: string
   right_document_name: string
+  right_document_status?: string
   right_claim: string
   right_extraction_method?: string
   right_page: number
@@ -37,6 +40,7 @@ type FactRecord = {
   document_id: string
   claim: string
   extraction_method?: string
+  document_status?: string
   source_page: number
   source_text: string
   created_at: string
@@ -80,6 +84,10 @@ function formatDate(value: string): string {
 export default function App() {
   const [view, setView] = useState<View>(readView)
   const [dataRevision, setDataRevision] = useState(0)
+  const [documentOffset, setDocumentOffset] = useState(0)
+  const [documentTotal, setDocumentTotal] = useState(0)
+  const [comparisonOffset, setComparisonOffset] = useState(0)
+  const [comparisonTotal, setComparisonTotal] = useState(0)
   const [documents, setDocuments] = useState<DocumentRecord[]>([])
   const [loadingDocuments, setLoadingDocuments] = useState(false)
   const [documentsError, setDocumentsError] = useState<string | null>(null)
@@ -120,11 +128,14 @@ export default function App() {
     const controller = new AbortController()
     setLoadingDocuments(true)
     setDocumentsError(null)
-    void fetch(`${apiBase}/documents`, { signal: controller.signal })
+    void fetch(`${apiBase}/documents?limit=20&offset=${documentOffset}`, { signal: controller.signal })
       .then(async response => {
         if (!response.ok) throw new Error('Could not load documents')
-        const data = await response.json() as DocumentRecord[]
-        if (!controller.signal.aborted) setDocuments(Array.isArray(data) ? data : [])
+        const data = await response.json() as { items: DocumentRecord[]; total: number }
+        if (controller.signal.aborted) return
+        if (documentOffset > 0 && documentOffset >= data.total) { setDocumentOffset(Math.max(0, Math.floor((data.total - 1) / 20) * 20)); return }
+        setDocuments(data.items)
+        setDocumentTotal(data.total)
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -137,7 +148,7 @@ export default function App() {
       })
 
     return () => controller.abort()
-  }, [view, dataRevision])
+  }, [view, dataRevision, documentOffset])
 
   useEffect(() => {
     if (view !== 'facts') return
@@ -179,15 +190,18 @@ export default function App() {
     const controller = new AbortController()
     setLoadingComparisons(true)
     setComparisonsError(null)
-    const params = new URLSearchParams()
+    const params = new URLSearchParams({ limit: '20', offset: String(comparisonOffset) })
     if (comparisonDocumentId) params.set('document_id', comparisonDocumentId)
     if (comparisonRelationship) params.set('relationship', comparisonRelationship)
     const query = params.toString()
     void fetch(`${apiBase}/comparisons${query ? `?${query}` : ''}`, { signal: controller.signal })
       .then(async response => {
         if (!response.ok) throw new Error('Could not load comparisons')
-        const data = await response.json() as ComparisonRecord[]
-        if (!controller.signal.aborted) setComparisons(Array.isArray(data) ? data : [])
+        const data = await response.json() as { items: ComparisonRecord[]; total: number }
+        if (controller.signal.aborted) return
+        if (comparisonOffset > 0 && comparisonOffset >= data.total) { setComparisonOffset(Math.max(0, Math.floor((data.total - 1) / 20) * 20)); return }
+        setComparisons(data.items)
+        setComparisonTotal(data.total)
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -200,7 +214,7 @@ export default function App() {
       })
 
     return () => controller.abort()
-  }, [view, comparisonDocumentId, comparisonRelationship, dataRevision])
+  }, [view, comparisonDocumentId, comparisonRelationship, comparisonOffset, dataRevision])
 
   useEffect(() => { document.title = `${sections[view].title} · Fact Layer` }, [view])
 
@@ -225,7 +239,8 @@ export default function App() {
       }
 
       const created = await response.json() as DocumentRecord
-      setDocuments(current => [created, ...current])
+      setDocuments(current => [created, ...current].slice(0, 20))
+      setDocumentOffset(0)
       setDataRevision(revision => revision + 1)
     } catch {
       setUploadError('The upload could not be saved. Please try again.')
@@ -318,7 +333,8 @@ export default function App() {
     }
   }
 
-  const evidenceWarning = (documentId: string) => {
+  const evidenceWarning = (documentId: string, status?: string) => {
+    if (status) return status === 'extraction_failed' ? 'Latest extraction failed. This evidence is retained from an earlier successful run.' : null
     if (loadingDocuments) return 'Checking source processing status…'
     const source = documents.find(document => document.id === documentId)
     if (documentsError || !source) return 'Source processing status is unavailable; evidence freshness could not be confirmed.'
@@ -354,7 +370,7 @@ export default function App() {
 
         {mutationBusy && <p className="processing-notice" role="status">{uploading ? 'Uploading and extracting evidence…' : `Reprocessing ${processingDocument?.filename}… Previous evidence remains visible until this finishes.`} OCR may take longer on scanned PDFs. You can browse other views while this runs; changing views does not cancel processing.</p>}
         <div className="stats-grid">
-          {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description: view === 'facts' ? 'Results for current filters' : 'Open Facts to load count',icon:Search},{key:'comparisons',label:'Comparisons',description: view === 'comparisons' ? 'Results for current filters' : 'Open Comparisons to load count',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? (loadingDocuments || documentsError ? '—' : documents.length) : item.key === 'facts' ? (view === 'facts' && !loadingFacts && !factsError ? factTotal : '—') : (view === 'comparisons' && !loadingComparisons && !comparisonsError ? comparisons.length : '—')}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
+          {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description: view === 'facts' ? 'Results for current filters' : 'Open Facts to load count',icon:Search},{key:'comparisons',label:'Comparisons',description: view === 'comparisons' ? 'Results for current filters' : 'Open Comparisons to load count',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? (loadingDocuments || documentsError ? '—' : documentTotal) : item.key === 'facts' ? (view === 'facts' && !loadingFacts && !factsError ? factTotal : '—') : (view === 'comparisons' && !loadingComparisons && !comparisonsError ? comparisonTotal : '—')}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
         </div>
 
         <section className="collection" aria-labelledby="collection-title"><div className="collection-heading"><div><h2 id="collection-title">{view === 'documents' ? 'Your documents' : view === 'facts' ? 'Your facts' : 'Your comparisons'}</h2><span>{view === 'documents' ? 'A home for your source material' : view === 'facts' ? 'Search claims and source passages' : 'Review relationships between sources'}</span></div><span className="coming-label">Live data</span></div>
@@ -409,6 +425,7 @@ export default function App() {
                   ))}
                 </div>
               )}
+              {!loadingDocuments && !documentsError && documentTotal > 0 && <nav className="fact-pagination" aria-label="Document pages"><span>Showing {documentOffset + 1}–{documentOffset + documents.length} of {documentTotal} documents</span><div><button disabled={documentOffset === 0} onClick={() => setDocumentOffset(offset => Math.max(0, offset - 20))}>Previous documents</button><button disabled={documentOffset + 20 >= documentTotal} onClick={() => setDocumentOffset(offset => offset + 20)}>Next documents</button></div></nav>}
               {managementError && <div className="error-text management-error" role="alert">{managementError}</div>}
               {selectedDocument && <section className="document-detail" aria-labelledby="document-detail-title">
                 <div className="detail-heading">
@@ -430,12 +447,7 @@ export default function App() {
           ) : view === 'facts' ? (
             <div className="facts-panel">
               <div className="fact-filters" aria-label="Fact filters">
-                <label>Source
-                  <select value={factDocumentId} onChange={event => { setFactDocumentId(event.target.value); setFactOffset(0) }}>
-                    <option value="">All documents</option>
-                    {documents.map(document => <option key={document.id} value={document.id}>{document.filename}</option>)}
-                  </select>
-                </label>
+                <SourceSelect key="facts" value={factDocumentId} revision={dataRevision} onChange={id => { setFactDocumentId(id); setFactOffset(0) }} />
                 <label className="fact-search-label">Search
                   <input value={factSearch} onChange={event => { setFactSearch(event.target.value); setFactOffset(0) }} placeholder="Search claims or evidence" />
                 </label>
@@ -454,7 +466,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="fact-browser-list">
-                    {facts.map(fact => <article className="fact-browser-card" key={fact.id}><div className="fact-browser-icon"><Search size={16} /></div><div><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text} · {fact.extraction_method === 'ocr' ? 'OCR — verify against PDF' : 'Native text'}</span><SourceLink documentId={fact.document_id} page={fact.source_page} />{evidenceWarning(fact.document_id) && <p className="error-text" role="status">{evidenceWarning(fact.document_id)}</p>}</div></article>)}
+                    {facts.map(fact => <article className="fact-browser-card" key={fact.id}><div className="fact-browser-icon"><Search size={16} /></div><div><strong>{fact.claim}</strong><span>Page {fact.source_page} · {fact.source_text} · {fact.extraction_method === 'ocr' ? 'OCR — verify against PDF' : 'Native text'}</span><SourceLink documentId={fact.document_id} page={fact.source_page} />{evidenceWarning(fact.document_id, fact.document_status) && <p className="error-text" role="status">{evidenceWarning(fact.document_id, fact.document_status)}</p>}</div></article>)}
                     <div className="fact-pagination"><span>Showing {factOffset + 1}–{Math.min(factOffset + facts.length, factTotal)} of {factTotal}</span><div><button disabled={factOffset === 0} onClick={() => setFactOffset(offset => Math.max(0, offset - factLimit))}>Previous</button><button disabled={factOffset + factLimit >= factTotal} onClick={() => setFactOffset(offset => offset + factLimit)}>Next</button></div></div>
                   </div>
                 )
@@ -464,14 +476,9 @@ export default function App() {
             <div className="comparison-panel">
               <p className="detail-empty">Comparisons use text matching, not fact verification. Matching wording does not prove a claim is true; a possible difference may reflect context or phrasing. Review both sources.</p>
               <div className="comparison-filters" aria-label="Comparison filters">
-                <label>Source
-                  <select value={comparisonDocumentId} onChange={event => setComparisonDocumentId(event.target.value)}>
-                    <option value="">All documents</option>
-                    {documents.map(document => <option key={document.id} value={document.id}>{document.filename}</option>)}
-                  </select>
-                </label>
+                <SourceSelect key="comparisons" value={comparisonDocumentId} revision={dataRevision} onChange={id => { setComparisonDocumentId(id); setComparisonOffset(0) }} />
                 <label>Relationship
-                  <select value={comparisonRelationship} onChange={event => setComparisonRelationship(event.target.value as RelationshipFilter)}>
+                  <select value={comparisonRelationship} onChange={event => { setComparisonRelationship(event.target.value as RelationshipFilter); setComparisonOffset(0) }}>
                     <option value="">All relationships</option>
                     <option value="agreement">Matching wording</option>
                     <option value="difference">Possible difference</option>
@@ -491,6 +498,7 @@ export default function App() {
                 </div>
               ) : (
                 <div className="comparison-list">
+                  <nav className="fact-pagination" aria-label="Comparison pages"><span>Showing {comparisonOffset + 1}–{comparisonOffset + comparisons.length} of {comparisonTotal} comparisons</span><div><button disabled={comparisonOffset === 0} onClick={() => setComparisonOffset(offset => Math.max(0, offset - 20))}>Previous comparisons</button><button disabled={comparisonOffset + 20 >= comparisonTotal} onClick={() => setComparisonOffset(offset => offset + 20)}>Next comparisons</button></div></nav>
                   {comparisons.map(comparison => (
                     <article key={comparison.id} className="comparison-card">
                       <div className="comparison-card-header">
@@ -500,13 +508,13 @@ export default function App() {
                       <div className="comparison-sources">
                         <div className="comparison-source">
                           <strong>{comparison.left_document_name}</strong>
-                          <p>{comparison.left_claim}</p>{evidenceWarning(comparison.left_document_id) && <p className="error-text" role="status">{evidenceWarning(comparison.left_document_id)}</p>}
+                          <p>{comparison.left_claim}</p>{evidenceWarning(comparison.left_document_id, comparison.left_document_status) && <p className="error-text" role="status">{evidenceWarning(comparison.left_document_id, comparison.left_document_status)}</p>}
                           <span>Page {comparison.left_page} · {comparison.left_source_text}{comparison.left_extraction_method === 'ocr' ? ' · OCR — verify against PDF' : ''}</span><SourceLink documentId={comparison.left_document_id} page={comparison.left_page} />
                         </div>
                         <div className="comparison-divider" aria-hidden="true"><GitCompareArrows size={16} /></div>
                         <div className="comparison-source">
                           <strong>{comparison.right_document_name}</strong>
-                          <p>{comparison.right_claim}</p>{evidenceWarning(comparison.right_document_id) && <p className="error-text" role="status">{evidenceWarning(comparison.right_document_id)}</p>}
+                          <p>{comparison.right_claim}</p>{evidenceWarning(comparison.right_document_id, comparison.right_document_status) && <p className="error-text" role="status">{evidenceWarning(comparison.right_document_id, comparison.right_document_status)}</p>}
                           <span>Page {comparison.right_page} · {comparison.right_source_text}{comparison.right_extraction_method === 'ocr' ? ' · OCR — verify against PDF' : ''}</span><SourceLink documentId={comparison.right_document_id} page={comparison.right_page} />
                         </div>
                       </div>
