@@ -1,7 +1,17 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 7 complete (all three phases) (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 8 Phase 1 specification complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
 
+
+
+
+## Part 8 Phase 1 — Planned portable recovery journey
+
+**Working today:** upload → schema-2 absolute source path → native/OCR evidence → paginated facts/comparisons and original PDF inspection. Whole-directory backups support same-path recovery; moving storage remains unsupported. The user journey and APIs are unchanged in this documentation phase.
+
+**Planned:** back up while stopped → transactionally migrate eligible legacy paths at the original root → store filename references → move the whole directory → start with the new FACTFLOW_DATA_DIR → resolve sources beneath that root. API stored_path remains absolute for compatibility. Invalid references must not reach source/process/delete filesystem actions. Missing files must remain distinguishable while preserving retained evidence.
+
+Defined fixture expectations for relocation, incomplete backups, rollback, native/OCR provenance, and safe tracked-file cleanup in docs/storage-portability-plan.md. None of those new implementation gates is claimed passed yet. Verification: 61 baseline backend tests plus documentation checks pass. Part 8 Phase 1 complete; implementation and recovery verification remain.
 
 
 ## Part 7 Phase 3 — Local operations and recovery

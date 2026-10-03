@@ -1,7 +1,21 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 7 complete (all three phases) (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 8 Phase 1 specification complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
 
+
+
+
+## Part 8 Phase 1 — Storage migration and recovery specification
+
+Started the three-phase Part 8 plan: specification, portable storage implementation, then relocation/recovery verification and repository hygiene. Added docs/storage-portability-plan.md after inspecting schema initialization, upload, serialization, source access, reprocessing/deletion, and path-dependent tests. This follows operational reconciliation because absolute source paths prevent portable recovery.
+
+Selected filename-only database references for planned schema 3, preserving absolute API response paths for compatibility. Specified a shared containment resolver, transactional legacy migration, rollback/idempotence, explicit invalid/missing-file behavior, and preservation of evidence/source bytes. Legacy archives must be migrated at their original root before moving; no basename guessing. Defined temporary fixture gates for migration failures, tampering, relocation, partial archives, and tracked runtime cleanup. These are requirements, not implemented features.
+
+Verification: all 61 baseline backend tests pass, with two existing dependency deprecation warnings. Specification covers current path consumers and test compatibility; local Markdown links/fences and whitespace checks pass. No runtime code, dependency, schema, local collection, or Git tracking changed; frontend checks were not rerun for documentation only.
+
+Phase 1 specification is complete; two phases remain. Next: implement portable references and verified migration. No git commit created.
+
+Suggested commit message: `docs: define portable storage migration and recovery acceptance gates`
 
 
 ## Part 7 Phase 3 — Operational reconciliation and scope decision

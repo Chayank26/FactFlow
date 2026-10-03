@@ -1,7 +1,17 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 7 complete (all three phases) (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 8 Phase 1 specification complete (Parts 4–7 complete). Current local ports: frontend 5179, API 8019.
 
+
+
+
+## Part 8 Phase 1 — Portable reference design
+
+**No new tool or dependency was needed.** Inspected existing pathlib/SQLite storage and pytest/Playwright consumers. Planned schema 3 retains stored_path as a filename-only database reference and resolves absolute API paths at response time. One validator will serve source/reprocess/delete; an explicit SQLite transaction must cover legacy schema/path/version changes and roll back failures.
+
+Trade-offs: retaining the column avoids duplicate compatibility state; a new storage-key column would clarify naming at greater migration cost. Absolute paths prevent portable restore, while a remote store or migration framework exceeds current local requirements. No automatic old-root/basename inference: migrate legacy archives at their original path first. Filesystem deletion and SQLite cannot be made one transaction by this design; failure expectations are documented without claiming crash atomicity.
+
+Verification: specification traced through current storage code and path-dependent tests; 61 baseline tests pass, with existing deprecation warnings. Defined but did not execute future migration/relocation fixture gates. Documentation links/fences and whitespace checks pass; no frontend rerun, code/schema changes, local-data migration, or runtime untracking. See docs/storage-portability-plan.md. Two Part 8 phases remain.
 
 
 ## Part 7 Phase 3 — Operational scope and recovery tools

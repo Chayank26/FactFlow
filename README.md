@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 7 is complete; Parts 4, 5, and 6 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 8 Phase 1 specification is complete; Parts 4–7 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -180,3 +180,7 @@ Original reference PDFs and ZIP remain untouched and are ignored by Git. Runtime
 ## Comparison quality evaluation
 
 A reproducible evaluation covers 48 synthetic labeled evidence pairs. The selected candidate removed one false match on a 24-pair holdout, but the production threshold remains 0.5: this small authored dataset does not establish real-world accuracy. Comparisons can miss paraphrases and negation/context relationships or surface unrelated wording overlaps. See the [rubric, results, limitations, and reproduction commands](docs/comparison-quality.md) and [raw report](docs/comparison-evaluation.json). Part 7 is complete; local single-user scope is retained. See the [operations runbook and recovery checkpoint](docs/operations.md) for configuration, troubleshooting, backup/restore, and the proposed next part.
+
+## Part 8: storage portability and recovery
+
+Part 8 has three phases: specification (complete), implementation, and relocation/recovery verification. The [migration plan and acceptance gates](docs/storage-portability-plan.md) define portable database references while preserving API compatibility. This is a specification checkpoint only: storage is still schema 2 with absolute paths, and moving an existing collection remains unsupported. Two phases remain.
