@@ -8,9 +8,9 @@ from pathlib import Path
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from app.extraction import extract_pages
+from app.admission import MutationGate
 from app.upload_storage import store_upload, UploadTooLarge
 from app.storage import InvalidSource, resolve_source, migrate_source_references
 from app.comparison_candidates import candidate_pairs, claim_tokens, normalized_claim
@@ -22,6 +22,7 @@ DB_PATH = DATA_DIR / "factlayer.db"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_FILENAME_LENGTH = 120
 SCHEMA_VERSION = 3
+mutation_gate = MutationGate()
 
 
 def init_db() -> None:
@@ -284,55 +285,54 @@ def safe_filename(filename: str) -> str:
 
 @app.post("/documents", response_model=DocumentResponse)
 async def upload_document(file: UploadFile = File(...)) -> DocumentResponse:
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="A file is required")
+    with mutation_gate.reserve() as lease:
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="A file is required")
 
-    if not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
-        raise HTTPException(status_code=415, detail="Only PDF documents are supported")
+        if not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
+            raise HTTPException(status_code=415, detail="Only PDF documents are supported")
 
-    safe_name = safe_filename(file.filename)
-    document_id = str(uuid.uuid4())
+        safe_name = safe_filename(file.filename)
+        document_id = str(uuid.uuid4())
+        try:
+            file_path = resolve_source(f"{document_id}_{safe_name}", UPLOADS_DIR)
+        except InvalidSource as error:
+            raise HTTPException(status_code=400, detail="Invalid filename") from error
+
+        try:
+            size_bytes = await store_upload(file, file_path, MAX_UPLOAD_BYTES)
+        except UploadTooLarge as error:
+            raise HTTPException(status_code=413, detail=str(error)) from error
+        except OSError as error:
+            raise HTTPException(status_code=500, detail="The uploaded PDF could not be stored. Please retry.") from error
+
+        created_at = datetime.now(timezone.utc).isoformat()
+        status = "uploaded"
+
+        try:
+            with get_connection() as connection:
+                connection.execute(
+                    """
+                    INSERT INTO documents (id, filename, size_bytes, content_type, stored_path, created_at, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (document_id, safe_name, size_bytes, file.content_type, file_path.name, created_at, status),
+                )
+                connection.commit()
+        except sqlite3.Error as error:
+            file_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=500, detail="The uploaded PDF could not be registered. Please retry.") from error
+
+        return await lease.run_sync(finish_upload, document_id, file_path)
+
+
+def finish_upload(document_id: str, file_path: Path) -> DocumentResponse:
     try:
-        file_path = resolve_source(f"{document_id}_{safe_name}", UPLOADS_DIR)
-    except InvalidSource as error:
-        raise HTTPException(status_code=400, detail="Invalid filename") from error
-
-    try:
-        size_bytes = await store_upload(file, file_path, MAX_UPLOAD_BYTES)
-    except UploadTooLarge as error:
-        raise HTTPException(status_code=413, detail=str(error)) from error
-    except OSError as error:
-        raise HTTPException(status_code=500, detail="The uploaded PDF could not be stored. Please retry.") from error
-
-    created_at = datetime.now(timezone.utc).isoformat()
-    status = "uploaded"
-
-    try:
-        with get_connection() as connection:
-            connection.execute(
-                """
-                INSERT INTO documents (id, filename, size_bytes, content_type, stored_path, created_at, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (document_id, safe_name, size_bytes, file.content_type, file_path.name, created_at, status),
-            )
-            connection.commit()
-    except sqlite3.Error as error:
-        file_path.unlink(missing_ok=True)
-        raise HTTPException(status_code=500, detail="The uploaded PDF could not be registered. Please retry.") from error
-
-    try:
-        await run_in_threadpool(process_document, document_id, file_path)
-        status = "processed"
+        process_document(document_id, file_path)
     except HTTPException:
-        status = "extraction_failed"
         with get_connection() as connection:
-            connection.execute(
-                "UPDATE documents SET status = ? WHERE id = ?",
-                (status, document_id),
-            )
+            connection.execute("UPDATE documents SET status = 'extraction_failed' WHERE id = ?", (document_id,))
             connection.commit()
-
     return document_from_row(get_document_row(document_id))
 
 
@@ -361,9 +361,10 @@ def get_document(document_id: str) -> DocumentResponse:
 
 @app.post("/documents/{document_id}/process", response_model=DocumentResponse)
 def reprocess_document(document_id: str) -> DocumentResponse:
-    row = get_document_row(document_id)
-    process_document(document_id, source_path(row))
-    return document_from_row(get_document_row(document_id))
+    with mutation_gate.reserve():
+        row = get_document_row(document_id)
+        process_document(document_id, source_path(row))
+        return document_from_row(get_document_row(document_id))
 
 
 @app.get("/documents/{document_id}/source", response_class=FileResponse)
@@ -390,16 +391,17 @@ def source_path(row: sqlite3.Row, status_code: int = 409) -> Path:
 
 @app.delete("/documents/{document_id}", status_code=204)
 def delete_document(document_id: str) -> None:
-    row = get_document_row(document_id)
-    path = source_path(row)
-    try:
-        path.unlink(missing_ok=True)
-    except OSError as error:
-        raise HTTPException(status_code=409, detail="Source could not be removed; retry after checking file permissions.") from error
-    with get_connection() as connection:
-        connection.execute("DELETE FROM facts WHERE document_id = ?", (document_id,))
-        connection.execute("DELETE FROM documents WHERE id = ?", (document_id,))
-        connection.commit()
+    with mutation_gate.reserve():
+        row = get_document_row(document_id)
+        path = source_path(row)
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as error:
+            raise HTTPException(status_code=409, detail="Source could not be removed; retry after checking file permissions.") from error
+        with get_connection() as connection:
+            connection.execute("DELETE FROM facts WHERE document_id = ?", (document_id,))
+            connection.execute("DELETE FROM documents WHERE id = ?", (document_id,))
+            connection.commit()
 
 
 @app.get("/facts", response_model=FactPageResponse)

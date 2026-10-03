@@ -1,6 +1,15 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 9 Phase 1 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 9 Phase 2 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 9 Phase 2 — Thread lock with worker-owned release
+
+No new tool or dependency was needed. Added app/admission.py using threading.Lock for non-blocking shared admission, plus asyncio task references/shielding and the existing Starlette threadpool for upload extraction. Upload task completion releases admission; synchronous process/delete release in finally. Exceptions are observed even after the requesting task is cancelled.
+
+A single mutation slot avoids per-document lock ordering and bounds extraction to one worker per API process, at the cost of rejecting unrelated mutations while busy. HTTP 503/Retry-After provides manual retry guidance without a queue. Multi-worker deployments, reload handoffs, external writers, and pre-parser request limiting remain outside this design. Existing UI management errors stay generic until Phase 3.
+
+Verification: 105 backend tests and both browser/API regression workflows pass. Event-driven tests check busy responses, read availability, no rejected-request writes, failure release, worker ownership after cancellation, and subsequent success. No schema/dependency/local-data change; build/mock suite not rerun for unchanged frontend. Existing warnings remain. Phase 3 is the final Part 9 phase.
+
 
 ## Part 9 Phase 1 — Chunked copies and compensating cleanup
 

@@ -1,6 +1,15 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 9 Phase 1 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 9 Phase 2 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 9 Phase 2 — Busy responses across local clients
+
+Multipart parsing → upload admission slot → validation/copy/registration → extraction/status response → slot release. Reprocess/delete reserve the same slot before accessing rows or source files. A competing mutation receives 503 with Retry-After: 1 and makes no application storage changes; it is not queued. Reads remain accessible as request-time snapshots.
+
+Cancelling an upload request during extraction does not free the slot until the worker completes; cancellation during copying releases it. Existing extraction failures retain source/evidence semantics. All documents share admission, including unrelated deletions. Single API process only; multipart spooling, other processes and external filesystem changes are outside this gate.
+
+Verification: 105 backend tests and both real integration workflows pass, including concurrency/read availability/retry and cancellation tests. Part 9 Phase 2 complete; dedicated browser busy messages and contention/retry verification remain Phase 3. No local data or schema changes.
+
 
 ## Part 9 Phase 1 — Complete upload publication and retry
 

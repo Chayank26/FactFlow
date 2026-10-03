@@ -1,6 +1,6 @@
 # Local operations and deployment decision
 
-Updated for Part 9 Phase 1, 2026-10-03; the Part 7 recovery drill below is historical.
+Updated for Part 9 Phase 2, 2026-10-03; the Part 7 recovery drill below is historical.
 
 ## Scope decision
 
@@ -59,7 +59,7 @@ The six legacy runtime artifacts (database and five sample text uploads) have be
 | Port already in use | Stop your own prior server or consistently change client/API/CORS ports; do not stop unrelated projects. |
 | OCR fails | Read the persisted extraction error; check engine/English data, page/image limits and readability. Failed reprocessing preserves earlier evidence. |
 | Source PDF returns 404 | Confirm registered file exists inside configured uploads and the configured uploads root and source references still match; restore missing files from the matching backup. |
-| Slow upload or comparison | Extraction has a 90-second document deadline, but no global concurrency bound. Dense comparisons remain quadratic and load all facts. See measured workload limits below. |
+| Slow upload or comparison | Extraction has a 90-second document deadline and one mutation slot per API process; multiple processes are not coordinated. Dense comparisons remain quadratic and load all facts. See measured workload limits below. |
 | Stale evidence after failure/restart | Reload document status and inspect original PDF; retained facts can be from the earlier successful run. No extraction history or durable task queue exists. |
 
 Upload accepts at most 10 MiB using bounded handler reads and temporary-file publication. Multipart parsing/spooling still occurs before the handler; no whole-request resource cap is implemented. Extraction allows 40 pages, 300-DPI rendering, 12 million pixels/page, and 20 seconds per OCR call. These are not a total-memory quota or throughput guarantee. Native/OCR evidence and comparisons require manual source review.
@@ -85,3 +85,9 @@ SHA-256 checks before/after untracking confirmed all six local files were preser
 ## Part 9 Phase 1 checkpoint
 
 98 backend tests and both real integration workflows pass. Copy/storage failure removes temporary files; database registration failure removes the unpublished-to-metadata source, provided unlink succeeds. A successful registration followed by extraction failure still retains the source. File/DB publication is not crash-atomic; interrupted processes can leave orphan files. Inspect Documents before retrying a request with a lost response. Extraction admission and mutation coordination remain Phase 2; frontend/build results above are historical Part 8 checks.
+
+## Part 9 Phase 2 checkpoint
+
+105 backend tests and both real integration workflows pass. Upload/reprocess/delete are serialized by one non-blocking in-memory gate; competing mutations receive 503 and Retry-After: 1. Wait for the active operation to finish before retrying manually. Read requests bypass admission. Upload extraction continues holding its slot after requester cancellation until the worker finishes. No durable queue or auto retry is provided.
+
+Use one API process per data directory; extra Uvicorn workers/instances bypass the single-process guarantee. Avoid reload or maintenance while mutations are active. Multipart parsing happens before admission and is still not ingress-limited. Existing browser errors are generic; dedicated busy/retry browser behavior and verification remain Phase 3. See the [admission contract](ingestion-reliability.md#phase-2--single-process-mutation-admission).

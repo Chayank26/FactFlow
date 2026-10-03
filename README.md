@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 9 Phase 1 is complete; Parts 4–8 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 9 Phase 2 is complete; Parts 4–8 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -187,4 +187,4 @@ All three Part 8 phases are complete: specification, implementation, and relocat
 
 ## Part 9: local ingestion reliability
 
-Phase 1 is complete: bounded upload copying, temporary-file cleanup, and cleanup after failed database registration. Two phases remain: extraction admission/mutation coordination, then failure/retry verification and operations. See the [implementation, tests, and remaining resource limits](docs/ingestion-reliability.md).
+Phases 1 and 2 are complete: bounded upload copying/cleanup and single-process mutation admission. Upload, reprocess, and delete share one slot; competing mutations return 503 with Retry-After while reads remain available. Run one API process per collection. One phase remains: browser failure/busy/retry verification and operations. See the [implementation, tests, and remaining resource limits](docs/ingestion-reliability.md).

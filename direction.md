@@ -1,6 +1,19 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 9 Phase 1 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 9 Phase 2 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 9 Phase 2 — Extraction admission and mutation coordination
+
+Added one non-blocking mutation slot per API process for upload, reprocess, and delete. Competing mutations return 503 with Retry-After: 1 before application storage changes; reads bypass admission. This follows bounded copying to prevent overlapping extraction and conflicting document mutations across local tabs/clients. All mutations share the slot for simplicity; unrelated deletions also receive busy responses.
+
+Upload extraction hands slot ownership to a strongly referenced shielded worker task, so requester cancellation does not admit another mutation while extraction still runs. Copy-stage cancellation and synchronous route failures release their slot normally. No queue, cross-process lock, schema, dependency, or local-data change.
+
+Verification: 105 backend tests and two real PDF/OCR browser/API workflows pass. Event-controlled concurrency tests cover upload/process/delete contention, no extra files/rows, read availability, and retry. Expected/unexpected worker failures and cancellation paths verify release/continued ownership. Existing storage/recovery checks pass. Markdown/whitespace checks pass; unchanged frontend build/mock tests not rerun. Existing warnings remain.
+
+Updated README, operations, and ingestion contract. Phase 2 complete; one phase remains: browser-level busy/failure/retry experience and operational verification. Browser management errors are still generic. No commit created.
+
+Suggested commit message: `feat: serialize document mutations and bound extraction concurrency`
+
 
 ## Part 9 Phase 1 — Bounded upload storage
 
