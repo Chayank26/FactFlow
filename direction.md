@@ -1,6 +1,19 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 6 Phase 2 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 6 complete through Phase 3 (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 6 Phase 3 — Measured processing experience
+
+Completed the third and final Part 6 phase. Declared local targets of 5s/10s/30s for 1/10/40 pages before running two trials per workload. Added a reproducible, storage-isolated full-page synthetic benchmark and raw JSON report. Max observed times were 0.350s, 2.382s, and 9.476s; largest child-process peak memory was about 144–163 MiB. These sparse repeated-page results meet the targets and support retaining bounded request-bound processing for current local use, not a universal SLA or concurrency guarantee.
+
+Added accessible persistent busy notices for upload/extraction and reprocessing; disabled conflicting actions while busy. Navigation remains available, and completion refreshes active view data without forcing a screen change. Failures release controls for retry. No percent progress, cancel API, durable queue, or resumable jobs are implied. This phase follows OCR correctness work so architecture decisions use measurements rather than assumptions.
+
+Verification: all 53 backend tests, 10 mocked desktop/mobile checks, real PDF/OCR browser integration, frontend build, and whitespace checks pass. New browser checks hold requests pending through navigation and verify failure/unlock/retry and active-view refresh. Benchmark validates expected text on every page and uses temporary files without importing the API. README and OCR plan document memory/timing methodology and cancellation/reload boundaries. Existing dependency/color-environment warnings remain.
+
+Suggested commit message: `feat: improve processing feedback and document OCR performance limits`
+
+Part 6 is complete. Proposed Part 7 focuses on collection scale and evaluated comparison quality. No git commit was created.
+
 
 ## Part 6 Phase 2 — Local OCR extraction
 
@@ -89,7 +102,7 @@ All three Part 5 phases are complete; their checkpoints are recorded above. Rema
 
 1. **Readiness specification complete:** Define representative scanned/text/mixed fixtures and extraction acceptance criteria; evaluate local OCR options before selecting dependencies.
 2. **Complete:** Add an OCR processor with page provenance and explicit failures. Checkpoint: scanned and mixed documents produce inspectable evidence without regressing text PDFs.
-3. Add processing progress/background execution if measured OCR latency requires it, then verify retries and reprocessing. OCR accuracy must be reported as a limitation, not assumed.
+3. **Complete — retained request-bound processing after measurement:** Add processing progress/background execution if measured OCR latency requires it, then verify retries and reprocessing. OCR accuracy must be reported as a limitation, not assumed.
 
 ### Part 7 — Larger collections and evaluated comparisons
 

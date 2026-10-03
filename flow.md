@@ -1,6 +1,17 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 6 Phase 2 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 6 complete through Phase 3 (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 6 Phase 3 — Busy state, completion, and measured limits
+
+**Updated user journey:** upload or reprocess → persistent extraction notice → conflicting mutation buttons disabled → optionally browse Facts/Comparisons while work continues → completion refreshes the active view and clears busy state. Failure restores controls so the user can retry, with earlier evidence warnings retained as appropriate. Completion does not force the view away from its URL hash.
+
+**Runtime flow:** still request → existing threadpool/disposable extraction process → native text/OCR → accepted facts or persisted failure. A client data revision refreshes view queries after mutations. No server job queue or percent/page-progress stream was added. Section navigation does not cancel mutation requests; closing/reloading can lose client status while server processing continues up to its existing deadline. No user cancellation or durable resume is provided.
+
+**Measurements:** temporary full-page synthetic scans at 1/10/40 pages met predeclared 5/10/30-second local targets in two trials each. Worst observed extraction was 9.476s at 40 pages. These are repeated sparse pages, not broad layout/concurrency measurements; memory reports a largest-child peak, not simultaneous total usage.
+
+**Checkpoint:** 53 backend tests, 10 mocked browser checks, real OCR integration, frontend build, and whitespace checks pass. All Part 6 phases are complete. Part 7 scale/evaluation remains proposed.
+
 
 ## Part 6 Phase 2 — Native and OCR evidence
 

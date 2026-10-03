@@ -1,0 +1,66 @@
+{
+  "machine": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "processor": "arm64",
+  "python": "3.13.9",
+  "tesseract": "tesseract 5.5.3",
+  "pypdfium2": "5.13.0",
+  "pillow": "12.3.0",
+  "dpi": 300,
+  "language": "eng",
+  "pixels_per_page": 8415000,
+  "targets_seconds": {
+    "1": 5,
+    "10": 10,
+    "40": 30
+  },
+  "results": [
+    {
+      "pages": 1,
+      "seconds": 0.35,
+      "seconds_per_page_average": 0.35,
+      "largest_child_peak_mib": 143.8,
+      "bytes": 159201,
+      "trial": 1
+    },
+    {
+      "pages": 1,
+      "seconds": 0.302,
+      "seconds_per_page_average": 0.302,
+      "largest_child_peak_mib": 143.8,
+      "bytes": 159201,
+      "trial": 2
+    },
+    {
+      "pages": 10,
+      "seconds": 2.382,
+      "seconds_per_page_average": 0.238,
+      "largest_child_peak_mib": 162.4,
+      "bytes": 160890,
+      "trial": 1
+    },
+    {
+      "pages": 10,
+      "seconds": 2.378,
+      "seconds_per_page_average": 0.238,
+      "largest_child_peak_mib": 162.8,
+      "bytes": 160890,
+      "trial": 2
+    },
+    {
+      "pages": 40,
+      "seconds": 9.374,
+      "seconds_per_page_average": 0.234,
+      "largest_child_peak_mib": 163.0,
+      "bytes": 166530,
+      "trial": 1
+    },
+    {
+      "pages": 40,
+      "seconds": 9.476,
+      "seconds_per_page_average": 0.237,
+      "largest_child_peak_mib": 162.7,
+      "bytes": 166530,
+      "trial": 2
+    }
+  ]
+}

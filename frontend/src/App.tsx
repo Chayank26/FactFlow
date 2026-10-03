@@ -79,10 +79,13 @@ function formatDate(value: string): string {
 
 export default function App() {
   const [view, setView] = useState<View>(readView)
+  const [dataRevision, setDataRevision] = useState(0)
   const [documents, setDocuments] = useState<DocumentRecord[]>([])
   const [loadingDocuments, setLoadingDocuments] = useState(false)
   const [documentsError, setDocumentsError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [processingDocument, setProcessingDocument] = useState<DocumentRecord | null>(null)
+  const mutationBusy = uploading || processingDocument !== null
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [comparisons, setComparisons] = useState<ComparisonRecord[]>([])
   const [loadingComparisons, setLoadingComparisons] = useState(false)
@@ -134,7 +137,7 @@ export default function App() {
       })
 
     return () => controller.abort()
-  }, [view])
+  }, [view, dataRevision])
 
   useEffect(() => {
     if (view !== 'facts') return
@@ -168,7 +171,7 @@ export default function App() {
       })
 
     return () => controller.abort()
-  }, [view, factDocumentId, factSearch, factOffset])
+  }, [view, factDocumentId, factSearch, factOffset, dataRevision])
 
   useEffect(() => {
     if (view !== 'comparisons') return
@@ -197,13 +200,13 @@ export default function App() {
       })
 
     return () => controller.abort()
-  }, [view, comparisonDocumentId, comparisonRelationship])
+  }, [view, comparisonDocumentId, comparisonRelationship, dataRevision])
 
   useEffect(() => { document.title = `${sections[view].title} · Fact Layer` }, [view])
 
   const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file || mutationBusy) return
 
     const input = event.currentTarget
     setUploading(true)
@@ -223,7 +226,7 @@ export default function App() {
 
       const created = await response.json() as DocumentRecord
       setDocuments(current => [created, ...current])
-      setView('documents')
+      setDataRevision(revision => revision + 1)
     } catch {
       setUploadError('The upload could not be saved. Please try again.')
     } finally {
@@ -274,6 +277,8 @@ export default function App() {
   }, [view, selectedDocument, detailOffset])
 
   const reprocessDocument = async (document: DocumentRecord) => {
+    if (mutationBusy) return
+    setProcessingDocument(document)
     setManagementError(null)
     try {
       const response = await fetch(`${apiBase}/documents/${document.id}/process`, { method: 'POST' })
@@ -292,16 +297,21 @@ export default function App() {
       } catch {
         setManagementError('Reprocessing could not be confirmed and document status could not be refreshed. Displayed evidence may be from an earlier run. Reload to check its status.')
       }
+    } finally {
+      setProcessingDocument(null)
+      setDataRevision(revision => revision + 1)
     }
   }
 
   const deleteDocument = async (document: DocumentRecord) => {
+    if (mutationBusy) return
     if (!window.confirm(`Delete ${document.filename}? Its extracted facts will also be removed.`)) return
     setManagementError(null)
     try {
       const response = await fetch(`${apiBase}/documents/${document.id}`, { method: 'DELETE' })
       if (!response.ok) throw new Error('Could not delete document')
       setDocuments(current => current.filter(item => item.id !== document.id))
+      setDataRevision(revision => revision + 1)
       setSelectedDocument(current => current?.id === document.id ? null : current)
     } catch {
       setManagementError('The document could not be deleted.')
@@ -342,6 +352,7 @@ export default function App() {
 
         <section className="intro-card" aria-labelledby="intro-title"><div className="intro-copy"><span className="intro-label"><Sparkles size={14} /> CONNECT THE DOTS</span><h2 id="intro-title">From scattered pages<br />to a clearer picture.</h2><p>Bring your sources together. Discover the facts.<br className="desktop-break" /> Understand the story between them.</p><a href="#comparisons" className="intro-link">Explore comparisons <ArrowRight size={16} /></a></div><div className="source-art" aria-hidden="true"><div className="art-orbit" /><div className="art-line line-one" /><div className="art-line line-two" /><div className="art-paper paper-one"><FileText size={24} /><i /><i /><i /></div><div className="art-center"><Waypoints size={32} /></div><div className="art-paper paper-two"><span className="art-check"><Check size={17} /></span><i /><i /><i /></div><span className="art-spark spark-one" /><span className="art-spark spark-two" /></div></section>
 
+        {mutationBusy && <p className="processing-notice" role="status">{uploading ? 'Uploading and extracting evidence…' : `Reprocessing ${processingDocument?.filename}… Previous evidence remains visible until this finishes.`} OCR may take longer on scanned PDFs. You can browse other views while this runs; changing views does not cancel processing.</p>}
         <div className="stats-grid">
           {([{key:'documents',label:'Documents',description:'Your source collection',icon:Files},{key:'facts',label:'Facts',description: view === 'facts' ? 'Results for current filters' : 'Open Facts to load count',icon:Search},{key:'comparisons',label:'Comparisons',description: view === 'comparisons' ? 'Results for current filters' : 'Open Comparisons to load count',icon:GitCompareArrows}] as const).map(item => <a href={`#${item.key}`} key={item.key} className="stat-card"><div className="stat-top"><span>{item.label}</span><item.icon size={18} /></div><div className="stat-number">{item.key === 'documents' ? (loadingDocuments || documentsError ? '—' : documents.length) : item.key === 'facts' ? (view === 'facts' && !loadingFacts && !factsError ? factTotal : '—') : (view === 'comparisons' && !loadingComparisons && !comparisonsError ? comparisons.length : '—')}</div><div className="stat-bottom"><span>{item.description}</span><ArrowUpRight size={15} /></div></a>)}
         </div>
@@ -353,9 +364,8 @@ export default function App() {
               <div className="documents-actions">
                 <label className="upload-button upload-button-live" aria-label="Upload a document">
                   <Upload size={16} /> Upload PDF
-                  <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} disabled={uploading} hidden />
+                  <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} disabled={mutationBusy} hidden />
                 </label>
-                {uploading && <span className="empty-hint">Uploading…</span>}
                 {uploadError && <span className="error-text">{uploadError}</span>}
               </div>
 
@@ -370,7 +380,7 @@ export default function App() {
                   <p>{section.emptyText}</p>
                   <label className="upload-button upload-button-live" aria-label="Upload your first document">
                     <Upload size={16} /> Upload PDF
-                    <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} disabled={uploading} hidden />
+                    <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} disabled={mutationBusy} hidden />
                   </label>
                 </div>
               ) : (
@@ -392,8 +402,8 @@ export default function App() {
                       </div>
                       <div className="document-actions">
                         <button className="icon-action" onClick={() => void openDocument(document)} title={`View ${document.filename}`} aria-label={`View ${document.filename}`}><Search size={15} /></button>
-                        <button className="icon-action" onClick={() => void reprocessDocument(document)} title={`Reprocess ${document.filename}`} aria-label={`Reprocess ${document.filename}`}><RefreshCw size={15} /></button>
-                        <button className="icon-action danger" onClick={() => void deleteDocument(document)} title={`Delete ${document.filename}`} aria-label={`Delete ${document.filename}`}><Trash2 size={15} /></button>
+                        <button className="icon-action" disabled={mutationBusy} onClick={() => void reprocessDocument(document)} title={`Reprocess ${document.filename}`} aria-label={`Reprocess ${document.filename}`}><RefreshCw size={15} /></button>
+                        <button className="icon-action danger" disabled={mutationBusy} onClick={() => void deleteDocument(document)} title={`Delete ${document.filename}`} aria-label={`Delete ${document.filename}`}><Trash2 size={15} /></button>
                       </div>
                     </article>
                   ))}

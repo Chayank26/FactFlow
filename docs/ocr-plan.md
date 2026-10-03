@@ -1,12 +1,12 @@
 # Part 6 — OCR readiness and acceptance plan
 
-Phases 1–2 are complete: the synthetic corpus is generated in tests and OCR is implemented. Phase 3 remains planned. Original readiness specifications below are retained with current results here.
+All three Part 6 phases are complete: OCR is implemented and measured, with processing-state UX and a documented decision to retain request-bound execution. Original readiness specifications below are retained with current results here.
 
 ## Three phases
 
 1. **Readiness (complete):** define representative fixtures, document acceptance criteria, inspect local capabilities, and compare implementations.
 2. **OCR extraction (complete):** materialize the corpus, install and verify dependencies, implement page-aware fallback with explicit failures and provenance, and run the acceptance checks below.
-3. **Processing experience:** measure latency/resource use, decide whether background execution is needed, and verify progress, retries, cancellation/failure handling, and reprocessing. A queue is not predetermined.
+3. **Processing experience (complete):** measure latency/resource use, decide whether background execution is needed, and verify progress, retries, cancellation/failure handling, and reprocessing. A queue is not predetermined.
 
 ## Phase 2 results
 
@@ -74,3 +74,27 @@ Tesseract takes images rather than PDF input, so rendering is necessary. pypdfiu
 ## Phase 3 measurement gate
 
 Record engine/renderer versions, machine, language data, pages/DPI, per-page and total wall time, and memory observations for single-page and multi-page fixtures. Set an interactive latency budget before judging results. If synchronous processing exceeds it, design bounded background execution with explicit job state and retry behavior; otherwise retain synchronous processing and document the measured limit. Only small-fixture timings exist so far; no larger-workload/memory results or background-job decision exist yet.
+
+## Phase 3 results and decision
+
+Before measuring, the local-use targets were set to 5 seconds for one page, 10 seconds for 10 pages, and 30 seconds at the 40-page limit. Two trials each used 2550x3300-pixel (8.415M), 300-DPI English printed scans. Each page repeats the same sparse two-line content and shared image resource; this measures full-page raster/OCR cost, not diverse complex layouts or concurrent users.
+
+| Pages | Wall time, trials 1 / 2 | Mean seconds/page, trials 1 / 2 | Largest child peak MiB |
+|---|---|---|---|
+| 1 | 0.350 / 0.302 | 0.350 / 0.302 | 143.8 / 143.8 |
+| 10 | 2.382 / 2.378 | 0.238 / 0.238 | 162.4 / 162.8 |
+| 40 | 9.374 / 9.476 | 0.234 / 0.237 | 163.0 / 162.7 |
+
+Measured on macOS 26.5.2 arm64, Python 3.13.9, Tesseract 5.5.3 with eng, pypdfium2 5.13.0, Pillow 12.3.0. Wall time includes worker startup, PDF parsing, rendering, and OCR but excludes fixture generation, HTTP upload, and database writes. Per-page time is the total divided by pages, not individual page latency. Memory is OS-reported maximum resident size for child processes in a fresh scenario process; it is not summed concurrent memory, parent/API memory, or a hard limit. Raw results: [ocr-benchmark.json](ocr-benchmark.json).
+
+**Decision:** retain bounded request-bound execution for the current local use case; all six measurements meet the declared targets. No queue or new dependency is justified by these fixtures alone. Re-evaluate with complex real documents, slower machines, and concurrent workloads before expanding scope. The existing 90-second hard deadline remains, independently of the interactive targets.
+
+**Processing experience:** an accessible upload/extraction or reprocessing notice stays visible across section navigation. Conflicting upload/reprocess/delete controls disable during these operations. Completion refreshes the active view without forcing navigation; failure releases controls and permits retry while preserving earlier evidence. No percentage or page-progress estimate is invented. There is no user cancellation API/button or durable job resume: navigation does not cancel a mutation; reload/tab closure can lose client state while server work continues to completion/deadline. These are explicit limitations, not background-job guarantees.
+
+Reproduce from backend/ after installing the locked dependencies and Tesseract:
+
+```sh
+.venv/bin/python scripts/benchmark_ocr.py --output ../docs/ocr-benchmark.json
+```
+
+The script uses temporary generated PDFs, never imports the API, and asserts the expected text on every page. Verification: 53 backend tests, 10 mocked desktop/mobile checks, real PDF/OCR integration, frontend build, and whitespace checks pass. Browser tests hold processing pending across navigation, verify disabled actions, exercise failure/retry, and verify active Facts refresh on successful completion.

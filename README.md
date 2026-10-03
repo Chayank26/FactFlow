@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 6 Phase 2 (OCR extraction) is complete; Parts 4 and 5 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Parts 4, 5, and 6 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -15,7 +15,7 @@ Navigation uses URL hashes; filters and selected-document state live in browser 
 
 ## OCR support and limits
 
-Part 6 Phases 1–2 are complete; Phase 3 will measure larger workloads and decide on background processing. See the [OCR plan and results](docs/ocr-plan.md).
+All three Part 6 phases are complete. Synthetic OCR workloads met the declared local latency targets, so bounded request-bound processing is retained. See the [OCR plan and results](docs/ocr-plan.md).
 
 On macOS, install the native engine before using scanned PDFs:
 
@@ -31,6 +31,14 @@ Processing limits: **40 pages**, **300-DPI rendering**, **12 million pixels per 
 Every image-bearing page is OCRed as a whole, even when it contains native text; this catches scanned content below selectable headings but can also OCR decorative images/logos and reinterpret native text. Any OCR failure rejects the whole new extraction rather than silently omitting that page. Blank/unreadable pages can therefore fail an otherwise readable document. Original PDFs and prior facts survive failed reprocessing; the UI displays a persisted failure reason.
 
 Recognition currently targets upright English printed text. A basic word-confidence rejection gate is not an accuracy guarantee. Rotation correction, handwriting, complex layouts/tables, additional languages, and extraction history remain unsupported. The rotated fixture was rejected; clean and mildly degraded fixtures passed. Schema version 2 adds extraction method and error metadata; existing facts default to native text.
+
+## Processing feedback and performance
+
+Uploading/extracting and reprocessing show a persistent busy notice. Conflicting upload/reprocess/delete actions disable until completion. You can browse other sections; completion refreshes the current view without forcing navigation. Failures permit retry and preserve prior evidence.
+
+There is no percentage progress, user cancel action, durable queue, or resume-after-reload behavior. Section navigation does not cancel processing. Reloading or closing the tab loses client state while the server may continue until completion or its deadline.
+
+Two-trial local synthetic runs took up to 0.35s / 2.38s / 9.48s for 1 / 10 / 40 full-page scans. Largest child-process memory peaks were approximately 144–163 MiB, not total concurrent memory. These sparse repeated-page fixtures do not establish performance for every document or machine. See [measurement details and reproduction command](docs/ocr-plan.md#phase-3-results-and-decision) before interpreting these results.
 
 ## Run locally
 
@@ -88,7 +96,7 @@ Alternatively, use installed Google Chrome without downloading Chromium:
 PLAYWRIGHT_CHANNEL=chrome npm run test:e2e
 ```
 
-Playwright starts and stops its own Vite server on port **5189** (the port must be free), uses a fixed API URL for interception, and runs four scenarios at desktop and mobile widths for eight checks. No backend server is needed: API responses are mocked, uploads use test bytes, and local documents are untouched. Backend pytest separately validates real PDF extraction and persistence.
+Playwright starts and stops its own Vite server on port **5189** (the port must be free), uses a fixed API URL for interception, and runs five scenarios at desktop and mobile widths for ten checks. No backend server is needed: API responses are mocked, uploads use test bytes, and local documents are untouched. Backend pytest separately validates real PDF extraction and persistence.
 
 Coverage includes upload, evidence pagination, reprocess page recovery, cancel/confirm deletion, fact search/source filters, comparison filters and evidence, browser Back/reload, failure messages, health/evidence retry, and a mobile overflow check. Failed tests retain traces under ignored `frontend/test-results/`; inspect a trace with `npx playwright show-trace <trace.zip>`. Browser exceptions fail the test. This currently checks Chromium/Chrome at two viewport sizes, not every browser or device.
 
@@ -104,7 +112,7 @@ PLAYWRIGHT_CHANNEL=chrome npm run test:integration
 
 This separate suite starts a real FastAPI server on **8029** and Vite on **5190**, and refuses to reuse running servers; both ports must be free. The Python test launcher sets a new temporary data directory before importing the app and adds only the test frontend origin to its CORS middleware. Normal app configuration is unchanged. Playwright stops both servers, and graceful backend shutdown removes temporary storage. A forced process kill may leave a temporary directory behind, never the normal app database.
 
-The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop lifecycle workflow including extraction failure/recovery and real scanned-PDF upload; the separate eight-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
+The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. This is one desktop lifecycle workflow including extraction failure/recovery and real scanned-PDF upload; the separate ten-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
 
 ## Inspect original sources
 

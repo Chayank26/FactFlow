@@ -1,6 +1,17 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 6 Phase 2 complete (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 6 complete through Phase 3 (Parts 4 and 5 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 6 Phase 3 — Evidence-based decision to retain request-bound processing
+
+**No new tool or dependency was needed.** Used existing Pillow/pypdf fixture generation, Python subprocess/resource timing, and the extraction worker. Each benchmark scenario launches a fresh process so child peak RSS is comparable; scratch PDFs are temporary and the API is never imported. Added backend/scripts/benchmark_ocr.py and docs/ocr-benchmark.json for reproduction.
+
+**Decision/trade-offs:** max times for 1/10/40 300-DPI pages were 0.350/2.382/9.476 seconds, below declared targets of 5/10/30 seconds. Retain current request-bound worker model rather than introduce a queue without evidence of need. Results cover sparse repeated scans on this arm64 Mac, not multi-user load or diverse layouts. Child peaks around 144–163 MiB exclude summed concurrency/API memory. Broader workloads or a durability/cancellation requirement can change this decision.
+
+**UI/state:** React tracks the active processing document and upload state, exposes an accessible busy notice, disables conflicting mutations, and refreshes active queries with a revision counter when work settles. Navigation remains independent. This avoids stale active results and the prior upload-completion view/hash mismatch. Existing API timeouts provide failure bounds, but no cancellation endpoint, job persistence, percent progress, or restart recovery is claimed.
+
+**Verification:** 53 backend tests, 10 desktop/mobile mocked tests, real scanned-PDF integration, frontend build, and whitespace checks pass. Held-response browser tests validate navigation, disabled actions, failure/retry, and refreshed results on success. Existing dependency warnings remain. Full benchmark methodology, raw values, limits, and reproduction command are recorded in docs/ocr-plan.md.
+
 
 ## Part 6 Phase 2 — Tesseract, PDFium, and isolated extraction
 

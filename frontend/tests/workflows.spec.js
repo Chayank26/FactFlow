@@ -24,7 +24,8 @@ async function setup(page, { empty = false } = {}) {
     else if (request.method() === 'DELETE') {
       state.docs = state.docs.filter(document => url.pathname !== `/documents/${document.id}`)
       return route.fulfill({ status: 204 })
-    } else if (url.pathname === '/facts') {
+    } else if (url.pathname.startsWith('/documents/')) body = state.docs.find(document => url.pathname === `/documents/${document.id}`)
+    else if (url.pathname === '/facts') {
       const id = url.searchParams.get('document_id') || 'alpha'
       const search = url.searchParams.get('search') || ''
       const total = search === 'missing' ? 0 : id === 'beta' ? 1 : state.count
@@ -141,4 +142,52 @@ test('health, upload, evidence, and list failures are visible and recoverable', 
   state.fail = ''
   await navigate(page, 'Facts')
   await expect(page.getByText('Showing 1–20 of 65')).toBeVisible()
+})
+
+test('processing notice persists across navigation and failure unlocks retry', async ({ page }) => {
+  const state = await setup(page)
+  let finish
+  const gate = new Promise(resolve => { finish = resolve })
+  await page.route('**/documents/alpha/process', async route => {
+    await gate
+    state.docs[0].status = 'extraction_failed'
+    await route.fulfill({ status: 422, json: { detail: 'Simulated processing failure' } })
+  })
+  try {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'View alpha.pdf', exact: true }).click()
+    await expect(page.getByText('Showing 1–20 of 65')).toBeVisible()
+    await page.getByRole('button', { name: 'Reprocess alpha.pdf', exact: true }).click()
+    await expect(page.locator('.processing-notice')).toContainText('Reprocessing alpha.pdf')
+    await expect(page.getByRole('button', { name: 'Reprocess alpha.pdf', exact: true })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Delete alpha.pdf', exact: true })).toBeDisabled()
+    await expect(page.locator('input[type=file]').first()).toBeDisabled()
+    await navigate(page, 'Facts')
+    await expect(page.locator('.processing-notice')).toBeVisible()
+    await navigate(page, 'Documents')
+    finish()
+    await expect(page.getByRole('alert')).toContainText('Reprocessing failed')
+    await expect(page.locator('.processing-notice')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Reprocess alpha.pdf', exact: true })).toBeEnabled()
+    await page.unroute('**/documents/alpha/process')
+    let succeed
+    const successGate = new Promise(resolve => { succeed = resolve })
+    await page.route('**/documents/alpha/process', async route => {
+      await successGate
+      state.docs[0].status = 'processed'
+      state.count = 3
+      await route.fulfill({ json: state.docs[0] })
+    })
+    await page.getByRole('button', { name: 'Reprocess alpha.pdf', exact: true }).click()
+    await navigate(page, 'Facts')
+    await expect(page.getByText('Showing 1–20 of 65')).toBeVisible()
+    succeed()
+    await expect(page.getByText('Showing 1–3 of 3')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Facts', exact: true })).toBeVisible()
+    await navigate(page, 'Documents')
+    await expect(page.getByRole('alert')).toHaveCount(0)
+    await expect(page.locator('.processing-notice')).toHaveCount(0)
+  } finally {
+    finish()
+  }
 })
