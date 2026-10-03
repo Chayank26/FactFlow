@@ -1,6 +1,19 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 9 Phase 2 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 9 complete (all three phases) (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 9 Phase 3 — Browser busy handling and retry verification
+
+Completed Part 9 with explicit 503 messages for upload, reprocess and delete. Messages state which action was not performed and guide manual retry after the active operation finishes; no automatic retry or queue. Upload errors now expose alert semantics. Existing extraction failure/retained-evidence handling remains unchanged.
+
+Added desktop/mobile busy/retry coverage and a real API/browser contention workflow. A test-only launcher wrapper holds a real reprocess worker; rejected actions preserve document count, facts, and source bytes while reads work. Release followed by browser retry succeeds. Controls are absent from normal API startup and use a bounded wait plus finally cleanup.
+
+Verification: 105 backend tests, 14 mocked browser checks, three real PDF/OCR/recovery/contention workflows, production build, Markdown links and whitespace checks pass. Adding the upload alert exposed an older assertion matching multiple alerts; narrowed it to the intended list error and reran successfully. Existing dependency/color warnings remain. No schema/dependency/local-data change or commit.
+
+Updated README, ingestion contract and operations guidance. Part 9 complete: zero phases remain. Pre-parser body limits, crash recovery/idempotency, multi-process coordination and deployment remain outside the completed part.
+
+Suggested commit message: `feat: explain busy document operations and verify manual retry`
+
 
 ## Part 9 Phase 2 — Extraction admission and mutation coordination
 

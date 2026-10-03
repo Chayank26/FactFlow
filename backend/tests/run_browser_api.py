@@ -29,7 +29,10 @@ def main():
             handle.extractall(restored, filter='data')
         os.environ["FACTFLOW_DATA_DIR"] = str(restored / 'data')
         subprocess.run([sys.executable, '-m', 'tests.recovery_fixture', 'verify', str(manifest)], cwd=Path(__file__).resolve().parents[1], env=os.environ.copy(), check=True)
-        from app.main import app
+        from app import main as application
+        from tests.contention_control import install
+        install(application)
+        app = application.app
 
         app.add_middleware(
             CORSMiddleware,

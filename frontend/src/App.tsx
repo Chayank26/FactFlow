@@ -234,6 +234,10 @@ export default function App() {
         body: formData,
       })
 
+      if (response.status === 503) {
+        setUploadError('Another document operation is in progress. Wait for it to finish, then select the file again. This upload was not started.')
+        return
+      }
       if (!response.ok) {
         throw new Error('Upload failed')
       }
@@ -297,6 +301,10 @@ export default function App() {
     setManagementError(null)
     try {
       const response = await fetch(`${apiBase}/documents/${document.id}/process`, { method: 'POST' })
+      if (response.status === 503) {
+        setManagementError('Another document operation is in progress. Wait for it to finish, then try Reprocess again. This request did not change your evidence.')
+        return
+      }
       if (!response.ok) throw new Error('Could not reprocess document')
       const updated = await response.json() as DocumentRecord
       setDocuments(current => current.map(item => item.id === updated.id ? updated : item))
@@ -324,6 +332,10 @@ export default function App() {
     setManagementError(null)
     try {
       const response = await fetch(`${apiBase}/documents/${document.id}`, { method: 'DELETE' })
+      if (response.status === 503) {
+        setManagementError('Another document operation is in progress. Wait for it to finish, then try Delete again. This document was not deleted.')
+        return
+      }
       if (!response.ok) throw new Error('Could not delete document')
       setDocuments(current => current.filter(item => item.id !== document.id))
       setDataRevision(revision => revision + 1)
@@ -382,7 +394,7 @@ export default function App() {
                   <Upload size={16} /> Upload PDF
                   <input type="file" accept="application/pdf,.pdf" onChange={handleUpload} disabled={mutationBusy} hidden />
                 </label>
-                {uploadError && <span className="error-text">{uploadError}</span>}
+                {uploadError && <span className="error-text" role="alert">{uploadError}</span>}
               </div>
 
               {loadingDocuments ? (

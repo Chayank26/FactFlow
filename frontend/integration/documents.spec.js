@@ -164,3 +164,58 @@ test('real PDF upload, extraction, pagination, comparison, reprocess, and deleti
   await expect(page.getByRole('button', { name: 'View scan.pdf', exact: true })).toHaveCount(0)
   expect(errors).toEqual([])
 })
+
+
+test('real contention rejects mutations and manual retries succeed after release', async ({ page, request }) => {
+  const errors = []
+  page.on('pageerror', error => errors.push(error.message))
+  const response = await request.post(`${api}/documents`, { multipart: { file: { name: 'busy.pdf', mimeType: 'application/pdf', buffer: pdf('Revenue increased 20 percent.') } } })
+  expect(response.ok()).toBe(true)
+  const doc = await response.json()
+  const before = await (await request.get(`${api}/facts`)).json()
+  const original = readFileSync(doc.stored_path)
+  await page.goto('/')
+  await page.getByRole('button', { name: 'View busy.pdf', exact: true }).click()
+  await expect(page.locator('.document-detail')).toContainText('Revenue increased 20 percent.')
+  await request.post(`${api}/__test__/contention`)
+  const active = request.post(`${api}/documents/${doc.id}/process`)
+  const mutations = []
+  page.on('request', r => { if (['POST', 'DELETE'].includes(r.method())) mutations.push(r.url()) })
+  const file = { name: 'retry.pdf', mimeType: 'application/pdf', buffer: pdf('Costs decreased five percent.') }
+  try {
+    await expect.poll(async () => (await (await request.get(`${api}/__test__/contention`)).json()).entered).toBe(true)
+    const rejected = page.waitForResponse(r => r.url() === `${api}/documents` && r.request().method() === 'POST')
+    await page.locator('input[type=file]').first().setInputFiles(file)
+    expect((await rejected).status()).toBe(503)
+    expect((await rejected).headers()['retry-after']).toBe('1')
+    await expect(page.getByText('This upload was not started.', { exact: false })).toBeVisible()
+    await page.getByRole('button', { name: 'Reprocess busy.pdf', exact: true }).click()
+    await expect(page.getByText('This request did not change your evidence.', { exact: false })).toBeVisible()
+    page.once('dialog', dialog => dialog.accept())
+    await page.getByRole('button', { name: 'Delete busy.pdf', exact: true }).click()
+    await expect(page.getByText('This document was not deleted.', { exact: false })).toBeVisible()
+    expect((await (await request.get(`${api}/documents`)).json()).total).toBe(1)
+    expect(await (await request.get(`${api}/facts`)).json()).toEqual(before)
+    expect(readFileSync(doc.stored_path)).toEqual(original)
+    await navigate(page, 'Facts')
+    await expect(page.locator('.fact-browser-card')).toHaveCount(1)
+    expect(mutations).toHaveLength(3)
+  } finally {
+    await request.delete(`${api}/__test__/contention`)
+    expect((await active).status()).toBe(200)
+  }
+  await navigate(page, 'Documents')
+  const retried = page.waitForResponse(r => r.url().endsWith(`/documents/${doc.id}/process`))
+  await page.getByRole('button', { name: 'Reprocess busy.pdf', exact: true }).click()
+  expect((await retried).status()).toBe(200)
+  await expect(page.getByRole('button', { name: 'Reprocess busy.pdf', exact: true })).toBeEnabled()
+  await page.locator('input[type=file]').first().setInputFiles(file)
+  await expect(page.getByRole('button', { name: 'View retry.pdf', exact: true })).toBeVisible()
+  for (const name of ['busy.pdf', 'retry.pdf']) {
+    page.once('dialog', dialog => dialog.accept())
+    await page.getByRole('button', { name: `Delete ${name}`, exact: true }).click()
+    await expect(page.getByRole('button', { name: `View ${name}`, exact: true })).toHaveCount(0)
+  }
+  expect((await (await request.get(`${api}/documents`)).json()).total).toBe(0)
+  expect(errors).toEqual([])
+})

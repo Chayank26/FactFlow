@@ -1,6 +1,6 @@
 # Local operations and deployment decision
 
-Updated for Part 9 Phase 2, 2026-10-03; the Part 7 recovery drill below is historical.
+Updated for Part 9 Phase 3, 2026-10-03; the Part 7 recovery drill below is historical.
 
 ## Scope decision
 
@@ -76,7 +76,7 @@ A database-only or incomplete archive cannot recover missing source bytes: sourc
 
 ## Verification and remaining scope
 
-Part 8 is complete. Current checks: **87 backend tests, 12 mocked desktop/mobile browser checks, two real browser/API workflows, and production build pass**. Backend recovery tests use separate seed/restore processes with real native/OCR fixtures and archive restoration. Same-path, relocated, missing-source, and moved-legacy cases pass. Browser startup uses the restored collection with the original path unavailable; source bytes, provenance, retained warnings, comparisons, reprocessing, and deletion are checked. The existing upload lifecycle runs afterward.
+Part 8 historical checkpoint: **87 backend tests, 12 mocked desktop/mobile browser checks, two real browser/API workflows, and production build pass**. Backend recovery tests use separate seed/restore processes with real native/OCR fixtures and archive restoration. Same-path, relocated, missing-source, and moved-legacy cases pass. Browser startup uses the restored collection with the original path unavailable; source bytes, provenance, retained warnings, comparisons, reprocessing, and deletion are checked. The existing upload lifecycle runs afterward.
 
 Reproduce with the README backend, browser mock, integration, and build commands. Run only the recovery cases from backend with `.venv/bin/python -m pytest -q tests/test_storage_recovery.py`. Tesseract with English data and locked Python dependencies are required for the real OCR fixtures. Ports remain 5189 for mocks and 5190/8029 for integration. All fixture storage is temporary; normal local data is never imported by the recovery probes.
 
@@ -90,4 +90,12 @@ SHA-256 checks before/after untracking confirmed all six local files were preser
 
 105 backend tests and both real integration workflows pass. Upload/reprocess/delete are serialized by one non-blocking in-memory gate; competing mutations receive 503 and Retry-After: 1. Wait for the active operation to finish before retrying manually. Read requests bypass admission. Upload extraction continues holding its slot after requester cancellation until the worker finishes. No durable queue or auto retry is provided.
 
-Use one API process per data directory; extra Uvicorn workers/instances bypass the single-process guarantee. Avoid reload or maintenance while mutations are active. Multipart parsing happens before admission and is still not ingress-limited. Existing browser errors are generic; dedicated busy/retry browser behavior and verification remain Phase 3. See the [admission contract](ingestion-reliability.md#phase-2--single-process-mutation-admission).
+Use one API process per data directory; extra Uvicorn workers/instances bypass the single-process guarantee. Avoid reload or maintenance while mutations are active. Multipart parsing happens before admission and is still not ingress-limited. Phase 3 now provides explicit busy messages and verified manual retry for upload/reprocess/delete. See the [admission contract](ingestion-reliability.md#phase-2--single-process-mutation-admission).
+
+## Part 9 completion and busy-response guidance
+
+All three Part 9 phases are complete. Current verification: **105 backend tests, 14 mocked desktop/mobile checks, three real API/browser workflows, and frontend build pass**. Earlier phase counts above are historical. Reproduce using the README commands; no user collection is used by tests.
+
+On a busy message, wait for the active upload/reprocess/delete to finish. Select the file again for upload, or use Reprocess/Delete again. Retry-After: 1 is a hint, not a completion time; no automatic retry or queue runs. Confirmed 503 attempts leave source/evidence unchanged. If the network drops without a response, inspect Documents/status before retrying because the operation may have committed. Cancelling a request does not cancel an active extraction worker.
+
+Reads remain available but may show snapshots while work completes. Keep one API process per collection and avoid reload/maintenance during processing. Ingress spooling, crash cleanup, idempotency and multi-process coordination remain outside this milestone. The integration launcher's test-only pause controls are not installed in the normal API. No deployment or local-data migration occurred.

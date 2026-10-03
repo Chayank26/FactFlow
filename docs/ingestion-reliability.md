@@ -1,10 +1,10 @@
 # Part 9 — Local ingestion reliability
 
-Part 9 has three phases. Phases 1 and 2 are complete; Phase 3 is planned. Local single-user scope continues.
+All three Part 9 phases are complete. Local single-user scope continues.
 
 1. **Bounded upload storage (complete):** remove the handler's full-file copy, enforce the existing file-size limit while copying, and clean up handled storage/registration failures.
 2. **Extraction admission and mutation coordination (complete):** bound concurrent extraction within the supported single API process; define retryable busy responses and prevent conflicting reprocess/delete operations. Verify slot release after failure and keep reads available. This is not a durable queue or multi-process lock.
-3. **Failure/retry verification and operations (planned):** exercise busy/failure/retry flows through browser/API tests, verify resource-release behavior, and reconcile operating guidance. No automatic retries that could duplicate uploads.
+3. **Failure/retry verification and operations (complete):** exercise busy/failure/retry flows through browser/API tests, verify resource-release behavior, and reconcile operating guidance. No automatic retries that could duplicate uploads.
 
 ## Implemented Phase 1 flow
 
@@ -48,4 +48,14 @@ Read endpoints do not acquire the mutation lock. They can return request-time sn
 
 **Verification:** 105 backend tests and both real PDF/OCR browser/API regression workflows pass. Event-controlled threaded tests hold upload/process/delete in flight, assert competitors receive 503/Retry-After without extra files/rows, check health/documents/facts/comparisons/source reads, and verify successful retry afterward. Failure tests cover expected extraction failure and unexpected worker exceptions. Cancellation tests prove ownership lasts through worker completion, while cancellation during copying releases admission. Earlier copy/storage/migration/recovery tests still pass.
 
-No frontend code, dependency, schema, local-data mutation, or Git commit. Browser management errors remain generic; dedicated busy copy and browser-level contention/retry verification are Phase 3. This phase's integration runs verify existing workflow regressions, not browser contention. Build/mock tests were not rerun for unchanged frontend code. Existing warnings remain.
+At the Phase 2 checkpoint there was no frontend change; dedicated busy copy and browser contention verification were deferred to Phase 3 (now complete below). No dependency, schema, or local-data mutation was made. This phase's integration runs verify existing workflow regressions, not browser contention. Build/mock tests were not rerun for unchanged frontend code. Existing warnings remain.
+
+## Phase 3 — Browser busy handling and verified manual retry
+
+The browser now distinguishes a 503 busy response from a failed extraction. Upload says the upload was not started and asks the user to select the file again after the active operation finishes. Reprocess says the request did not change evidence; Delete says the document was not deleted. No automatic retry, countdown, or queued job is implied. Upload errors have alert semantics; management errors retain their existing alerts. Other failure handling and retained-evidence refresh remain unchanged.
+
+The mocked suite verifies all three busy messages at desktop/mobile widths, existing evidence, unlocked controls, explicit retries and mutation request counts. The real API/browser suite starts an actual reprocess from a second API client while a test-only wrapper holds its worker. It checks 503/Retry-After, unchanged facts/source bytes and document count, available fact browsing, then releases the worker and retries through the browser. These controls live only in backend/tests and are installed by the disposable integration launcher, never by normal app startup. The pause has a 30-second fail-safe; cleanup releases it in finally. Existing OCR/recovery and failure workflows also pass.
+
+Checkpoint: **105 backend tests, 14 desktop/mobile mocked checks, three real browser/API workflows, and production build pass.** Backend cancellation/resource-release regressions from Phase 2 remain passing. An old unscoped alert assertion was narrowed to the intended list error after uploads gained alert semantics. Existing dependency/color warnings remain; no dependency/schema/local-data change or commit.
+
+Part 9 is complete. Outstanding boundaries are pre-parser upload resource limits, process-crash recovery/idempotency, multi-process coordination and public deployment—not unfinished phases of this part. Use one API process per collection. A received busy response means that attempt was rejected; a lost response is ambiguous and must not be treated as a confirmed rejection.

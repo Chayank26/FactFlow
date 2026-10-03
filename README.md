@@ -1,6 +1,6 @@
 # Fact Layer
 
-A practice project for extracting grounded facts from PDFs and comparing their context. **Part 9 Phase 2 is complete; Parts 4–8 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
+A practice project for extracting grounded facts from PDFs and comparing their context. **Part 9 is complete; Parts 4–8 are complete.** The app supports PDF upload and local storage, deterministic text extraction with evidence references, document management, a searchable fact browser, and filtered cross-document comparisons. Local English OCR supports scanned and mixed PDFs. All three Part 5 phases are complete. Later proposed parts are recorded in direction.md.
 
 ## Current capabilities and boundaries
 
@@ -96,7 +96,7 @@ Alternatively, use installed Google Chrome without downloading Chromium:
 PLAYWRIGHT_CHANNEL=chrome npm run test:e2e
 ```
 
-Playwright starts and stops its own Vite server on port **5189** (the port must be free), uses a fixed API URL for interception, and runs six scenarios at desktop and mobile widths for twelve checks. No backend server is needed: API responses are mocked, uploads use test bytes, and local documents are untouched. Backend pytest separately validates real PDF extraction and persistence.
+Playwright starts and stops its own Vite server on port **5189** (the port must be free), uses a fixed API URL for interception, and runs seven scenarios at desktop and mobile widths for fourteen checks. No backend server is needed: API responses are mocked, uploads use test bytes, and local documents are untouched. Backend pytest separately validates real PDF extraction and persistence.
 
 Coverage includes upload, evidence pagination, reprocess page recovery, cancel/confirm deletion, fact search/source filters, comparison filters and evidence, browser Back/reload, failure messages, health/evidence retry, and a mobile overflow check. Failed tests retain traces under ignored `frontend/test-results/`; inspect a trace with `npx playwright show-trace <trace.zip>`. Browser exceptions fail the test. This currently checks Chromium/Chrome at two viewport sizes, not every browser or device.
 
@@ -112,7 +112,7 @@ PLAYWRIGHT_CHANNEL=chrome npm run test:integration
 
 This separate suite starts a real FastAPI server on **8029** and Vite on **5190**, and refuses to reuse running servers; both ports must be free. The Python test launcher seeds and archives a temporary native/OCR collection in a separate process, makes its original path unavailable, restores it at a new root, and sets that restored data directory before importing the app and adds only the test frontend origin to its CORS middleware. Normal app configuration is unchanged. Playwright stops both servers, and graceful backend shutdown removes temporary storage. A forced process kill may leave a temporary directory behind, never the normal app database.
 
-The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. Two desktop workflows cover restored native/OCR evidence and the existing upload lifecycle; the separate twelve-check mocked suite retains broader failure/mobile coverage. Neither suite constitutes a full accessibility or production-readiness audit.
+The test generates valid PDF bytes, then exercises browser upload, real extraction, evidence pagination, source/search filters, an agreement comparison, failed reprocessing with retained-evidence warnings across all three views, successful retry, and confirmed deletion. Direct API/filesystem assertions also verify fact replacement and removal of rows and PDFs. It uses no mocked requests. Three desktop workflows cover restored native/OCR evidence, the upload lifecycle, and real mutation contention with manual retry; the separate fourteen-check mocked suite retains broader failure/mobile coverage. Test-only controls in the disposable launcher pause one real operation for deterministic contention; the normal API has no such controls. Neither suite constitutes a full accessibility or production-readiness audit.
 
 ## Inspect original sources
 
@@ -187,4 +187,4 @@ All three Part 8 phases are complete: specification, implementation, and relocat
 
 ## Part 9: local ingestion reliability
 
-Phases 1 and 2 are complete: bounded upload copying/cleanup and single-process mutation admission. Upload, reprocess, and delete share one slot; competing mutations return 503 with Retry-After while reads remain available. Run one API process per collection. One phase remains: browser failure/busy/retry verification and operations. See the [implementation, tests, and remaining resource limits](docs/ingestion-reliability.md).
+All three Part 9 phases are complete: bounded upload copying/cleanup, single-process mutation admission, and browser failure/busy/retry verification. Upload, reprocess, and delete share one slot; competing mutations return 503 with Retry-After while reads remain available. Run one API process per collection. Busy messages explain which action was not performed. Wait for the active operation to finish, then select the file again or retry Reprocess/Delete. There is no automatic retry; a network failure without a response still requires inspecting Documents before retrying. See the [implementation, tests, and remaining resource limits](docs/ingestion-reliability.md).

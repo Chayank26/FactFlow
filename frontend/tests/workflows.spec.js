@@ -4,12 +4,15 @@ import { test, expect } from '@playwright/test'
 // Real PDF parsing, storage, and API contracts are covered by backend pytest.
 async function setup(page, { empty = false } = {}) {
   const doc = id => ({ id, filename: `${id}.pdf`, size_bytes: 100, content_type: 'application/pdf', stored_path: '', created_at: '2026-09-28T00:00:00Z', status: 'processed' })
-  const state = { docs: empty ? [] : [doc('alpha'), doc('beta')], count: 65, fail: '', requests: [] }
+  const state = { docs: empty ? [] : [doc('alpha'), doc('beta')], count: 65, fail: '', busy: false, requests: [] }
   page.on('pageerror', error => { throw error })
   await page.route('http://127.0.0.1:8019/**', async route => {
     const request = route.request()
     const url = new URL(request.url())
     state.requests.push({ path: url.pathname, query: url.searchParams, method: request.method() })
+    if (state.busy && ['POST', 'DELETE'].includes(request.method())) {
+      return route.fulfill({ status: 503, headers: { 'Retry-After': '1' }, json: { detail: 'Operation in progress' } })
+    }
     if (state.fail === url.pathname) {
       return route.fulfill({ status: 500, json: { detail: 'Simulated failure' } })
     }
@@ -146,7 +149,7 @@ test('health, upload, evidence, and list failures are visible and recoverable', 
   for (const [path, view] of [['/facts', 'Facts'], ['/comparisons', 'Comparisons'], ['/documents', 'Documents']]) {
     state.fail = path
     await navigate(page, view)
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(page.getByRole('alert').filter({ hasText: `${view} could not be loaded` })).toBeVisible()
     await expect(page.locator('.stat-card').filter({ hasText: view }).locator('.stat-number')).toHaveText('—')
   }
   state.fail = ''
@@ -234,4 +237,38 @@ test('document and comparison pages stay bounded and later sources are selectabl
   await page.getByRole('combobox', { name: 'Relationship' }).selectOption('agreement')
   await expect(page.getByText('Showing 1–20 of 22 comparisons')).toBeVisible()
   await expect(page.locator('.stat-card').filter({ hasText: 'Comparisons' }).locator('.stat-number')).toHaveText('22')
+})
+
+
+test('busy mutations retain evidence and allow explicit retry', async ({ page }) => {
+  const state = await setup(page)
+  await page.goto('/')
+  await page.getByRole('button', { name: 'View alpha.pdf', exact: true }).click()
+  await expect(page.locator('.document-detail .fact-row')).toHaveCount(20)
+  state.busy = true
+  const file = { name: 'upload.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF test') }
+  await page.locator('input[type=file]').first().setInputFiles(file)
+  await expect(page.getByText('This upload was not started.', { exact: false })).toBeVisible()
+  await page.getByRole('button', { name: 'Reprocess alpha.pdf', exact: true }).click()
+  await expect(page.getByText('This request did not change your evidence.', { exact: false })).toBeVisible()
+  await expect(page.locator('.document-detail .fact-row')).toHaveCount(20)
+  page.once('dialog', dialog => dialog.accept())
+  await page.getByRole('button', { name: 'Delete alpha.pdf', exact: true }).click()
+  await expect(page.getByText('This document was not deleted.', { exact: false })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'View alpha.pdf', exact: true })).toBeVisible()
+  await navigate(page, 'Facts')
+  await expect(page.locator('.fact-browser-card').first()).toBeVisible()
+  expect(state.requests.filter(r => ['POST', 'DELETE'].includes(r.method))).toHaveLength(3)
+  state.busy = false
+  await navigate(page, 'Documents')
+  await page.getByRole('button', { name: 'Reprocess alpha.pdf', exact: true }).click()
+  await expect(page.getByText('This request did not change your evidence.', { exact: false })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Reprocess alpha.pdf', exact: true })).toBeEnabled()
+  await page.locator('input[type=file]').first().setInputFiles(file)
+  await expect(page.getByRole('button', { name: 'View upload.pdf', exact: true })).toBeVisible()
+  await expect(page.getByText('This upload was not started.', { exact: false })).toHaveCount(0)
+  page.once('dialog', dialog => dialog.accept())
+  await page.getByRole('button', { name: 'Delete alpha.pdf', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'View alpha.pdf', exact: true })).toHaveCount(0)
+  expect(state.requests.filter(r => ['POST', 'DELETE'].includes(r.method))).toHaveLength(6)
 })

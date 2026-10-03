@@ -1,6 +1,15 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 9 Phase 2 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 9 complete (all three phases) (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 9 Phase 3 — Clear busy outcomes and manual retry
+
+Upload/reprocess/delete → API 503 when another mutation holds the slot → browser explains that upload was not started, evidence was unchanged, or document was not deleted → controls remain available for manual retry after active work finishes. Upload retry requires selecting the file again; no queued/automatic retries exist. A missing network response remains ambiguous: inspect Documents before retrying.
+
+Real contention testing holds a reprocess from another API client, verifies browser busy messages and unchanged evidence/source bytes, permits fact browsing, then releases it and retries successfully. Test-only controls run only in the disposable integration server; production request flow is unchanged beyond UI messaging.
+
+Checkpoint: 105 backend tests, 14 desktop/mobile mocks, three real browser/API workflows and build pass. All Part 9 phases complete. Single-process local scope remains; no schema or user-data change.
+
 
 ## Part 9 Phase 2 — Busy responses across local clients
 

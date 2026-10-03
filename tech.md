@@ -1,6 +1,15 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 9 Phase 2 complete (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 9 complete (all three phases) (Parts 4–8 complete). Current local ports: frontend 5179, API 8019.
+
+## Part 9 Phase 3 — Explicit 503 handling and deterministic contention tests
+
+No new tool or dependency was needed. React handlers branch on 503 before generic error handling, preserving local evidence and exposing action-specific retry guidance. Upload errors now have alert semantics. The existing Playwright mock harness supports busy responses; its request counts verify mutations occur only on explicit attempts in the tested flow.
+
+A threading.Event wrapper installed exclusively by the temporary test launcher pauses one real process_document call while the production admission gate stays held. A second client and browser exercise actual rejection and retry. No arbitrary sleep or production test endpoint was introduced; pause has a 30-second bound and finally release. Normal API startup never imports the test controls.
+
+Verification: 105 backend tests, 14 mocked browser checks, three real integration workflows, frontend build and documentation checks pass. Existing cancellation/slot-release tests continue to pass. Corrected an existing broad alert selector after introducing a second accessible alert. Existing warnings remain. No dependency/schema/local-data change or commit. Part 9 complete; single-process and ingress/crash limitations remain explicit.
+
 
 ## Part 9 Phase 2 — Thread lock with worker-owned release
 
