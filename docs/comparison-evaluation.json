@@ -1,0 +1,1682 @@
+{
+  "dataset_version": 1,
+  "provenance": "Agent-authored synthetic English pairs; not independently annotated, blind, or representative of production documents.",
+  "selection_rule": "Highest development macro-F1; prefer baseline on ties. Never select threshold using holdout.",
+  "development": [
+    {
+      "threshold": 0.5,
+      "metrics": {
+        "count": 24,
+        "confusion_matrix_actual_then_predicted": {
+          "agreement": {
+            "agreement": 4,
+            "difference": 0,
+            "none": 0
+          },
+          "difference": {
+            "agreement": 0,
+            "difference": 8,
+            "none": 4
+          },
+          "none": {
+            "agreement": 0,
+            "difference": 3,
+            "none": 5
+          }
+        },
+        "accuracy": 0.7083333333333334,
+        "macro_f1": 0.7612958226768969,
+        "per_label": {
+          "agreement": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "support": 4
+          },
+          "difference": {
+            "precision": 0.7272727272727273,
+            "recall": 0.6666666666666666,
+            "f1": 0.6956521739130435,
+            "support": 12
+          },
+          "none": {
+            "precision": 0.5555555555555556,
+            "recall": 0.625,
+            "f1": 0.5882352941176471,
+            "support": 8
+          }
+        },
+        "by_category": {
+          "wording": {
+            "correct": 4,
+            "total": 4
+          },
+          "quantity": {
+            "correct": 1,
+            "total": 1
+          },
+          "negation": {
+            "correct": 1,
+            "total": 1
+          },
+          "units": {
+            "correct": 1,
+            "total": 1
+          },
+          "roles": {
+            "correct": 1,
+            "total": 1
+          },
+          "time": {
+            "correct": 1,
+            "total": 1
+          },
+          "scope": {
+            "correct": 1,
+            "total": 1
+          },
+          "sign": {
+            "correct": 1,
+            "total": 1
+          },
+          "paraphrase": {
+            "correct": 0,
+            "total": 3
+          },
+          "context": {
+            "correct": 0,
+            "total": 1
+          },
+          "format": {
+            "correct": 1,
+            "total": 1
+          },
+          "different_subject": {
+            "correct": 0,
+            "total": 1
+          },
+          "boilerplate": {
+            "correct": 1,
+            "total": 3
+          },
+          "unrelated": {
+            "correct": 3,
+            "total": 3
+          },
+          "stopwords": {
+            "correct": 1,
+            "total": 1
+          }
+        },
+        "review_pair_precision": 0.8,
+        "review_pair_recall": 0.75
+      },
+      "predictions": [
+        {
+          "id": "development-01",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Case and final punctuation only."
+        },
+        {
+          "id": "development-02",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Whitespace only."
+        },
+        {
+          "id": "development-03",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Identical evidence wording."
+        },
+        {
+          "id": "development-04",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Unicode case normalization."
+        },
+        {
+          "id": "development-05",
+          "category": "quantity",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric with differing quantities."
+        },
+        {
+          "id": "development-06",
+          "category": "negation",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric with negated change."
+        },
+        {
+          "id": "development-07",
+          "category": "units",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same dose with differing units."
+        },
+        {
+          "id": "development-08",
+          "category": "roles",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Reversed acquisition roles."
+        },
+        {
+          "id": "development-09",
+          "category": "time",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric with differing reporting periods; not necessarily inconsistent."
+        },
+        {
+          "id": "development-10",
+          "category": "scope",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric at different scope merits contextual review."
+        },
+        {
+          "id": "development-11",
+          "category": "sign",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same balance with a differing sign."
+        },
+        {
+          "id": "development-12",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as equivalent financial change, but not matching wording."
+        },
+        {
+          "id": "development-13",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as related treatment outcome in different language."
+        },
+        {
+          "id": "development-14",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as the same production event."
+        },
+        {
+          "id": "development-15",
+          "category": "context",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same bridge, different events and context."
+        },
+        {
+          "id": "development-16",
+          "category": "format",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Equivalent amount expressed differently; review, not contradiction."
+        },
+        {
+          "id": "development-17",
+          "category": "different_subject",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different measures; common change and number are insufficient."
+        },
+        {
+          "id": "development-18",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Separate objects share generic approval language."
+        },
+        {
+          "id": "development-19",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "Generic report language with unrelated subjects."
+        },
+        {
+          "id": "development-20",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different phenomena with generic measurement language."
+        },
+        {
+          "id": "development-21",
+          "category": "unrelated",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "No shared review subject."
+        },
+        {
+          "id": "development-22",
+          "category": "unrelated",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "No shared review subject."
+        },
+        {
+          "id": "development-23",
+          "category": "stopwords",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "Only connecting words overlap."
+        },
+        {
+          "id": "development-24",
+          "category": "unrelated",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "No shared review subject."
+        }
+      ],
+      "errors": [
+        {
+          "id": "development-12",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as equivalent financial change, but not matching wording."
+        },
+        {
+          "id": "development-13",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as related treatment outcome in different language."
+        },
+        {
+          "id": "development-14",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as the same production event."
+        },
+        {
+          "id": "development-15",
+          "category": "context",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same bridge, different events and context."
+        },
+        {
+          "id": "development-17",
+          "category": "different_subject",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different measures; common change and number are insufficient."
+        },
+        {
+          "id": "development-18",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Separate objects share generic approval language."
+        },
+        {
+          "id": "development-20",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different phenomena with generic measurement language."
+        }
+      ]
+    },
+    {
+      "threshold": 0.6,
+      "metrics": {
+        "count": 24,
+        "confusion_matrix_actual_then_predicted": {
+          "agreement": {
+            "agreement": 4,
+            "difference": 0,
+            "none": 0
+          },
+          "difference": {
+            "agreement": 0,
+            "difference": 7,
+            "none": 5
+          },
+          "none": {
+            "agreement": 0,
+            "difference": 2,
+            "none": 6
+          }
+        },
+        "accuracy": 0.7083333333333334,
+        "macro_f1": 0.7660818713450293,
+        "per_label": {
+          "agreement": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "support": 4
+          },
+          "difference": {
+            "precision": 0.7777777777777778,
+            "recall": 0.5833333333333334,
+            "f1": 0.6666666666666666,
+            "support": 12
+          },
+          "none": {
+            "precision": 0.5454545454545454,
+            "recall": 0.75,
+            "f1": 0.631578947368421,
+            "support": 8
+          }
+        },
+        "by_category": {
+          "wording": {
+            "correct": 4,
+            "total": 4
+          },
+          "quantity": {
+            "correct": 1,
+            "total": 1
+          },
+          "negation": {
+            "correct": 0,
+            "total": 1
+          },
+          "units": {
+            "correct": 1,
+            "total": 1
+          },
+          "roles": {
+            "correct": 1,
+            "total": 1
+          },
+          "time": {
+            "correct": 1,
+            "total": 1
+          },
+          "scope": {
+            "correct": 1,
+            "total": 1
+          },
+          "sign": {
+            "correct": 1,
+            "total": 1
+          },
+          "paraphrase": {
+            "correct": 0,
+            "total": 3
+          },
+          "context": {
+            "correct": 0,
+            "total": 1
+          },
+          "format": {
+            "correct": 1,
+            "total": 1
+          },
+          "different_subject": {
+            "correct": 0,
+            "total": 1
+          },
+          "boilerplate": {
+            "correct": 2,
+            "total": 3
+          },
+          "unrelated": {
+            "correct": 3,
+            "total": 3
+          },
+          "stopwords": {
+            "correct": 1,
+            "total": 1
+          }
+        },
+        "review_pair_precision": 0.8461538461538461,
+        "review_pair_recall": 0.6875
+      },
+      "predictions": [
+        {
+          "id": "development-01",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Case and final punctuation only."
+        },
+        {
+          "id": "development-02",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Whitespace only."
+        },
+        {
+          "id": "development-03",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Identical evidence wording."
+        },
+        {
+          "id": "development-04",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Unicode case normalization."
+        },
+        {
+          "id": "development-05",
+          "category": "quantity",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric with differing quantities."
+        },
+        {
+          "id": "development-06",
+          "category": "negation",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same metric with negated change."
+        },
+        {
+          "id": "development-07",
+          "category": "units",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same dose with differing units."
+        },
+        {
+          "id": "development-08",
+          "category": "roles",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Reversed acquisition roles."
+        },
+        {
+          "id": "development-09",
+          "category": "time",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric with differing reporting periods; not necessarily inconsistent."
+        },
+        {
+          "id": "development-10",
+          "category": "scope",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric at different scope merits contextual review."
+        },
+        {
+          "id": "development-11",
+          "category": "sign",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same balance with a differing sign."
+        },
+        {
+          "id": "development-12",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as equivalent financial change, but not matching wording."
+        },
+        {
+          "id": "development-13",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as related treatment outcome in different language."
+        },
+        {
+          "id": "development-14",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as the same production event."
+        },
+        {
+          "id": "development-15",
+          "category": "context",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same bridge, different events and context."
+        },
+        {
+          "id": "development-16",
+          "category": "format",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Equivalent amount expressed differently; review, not contradiction."
+        },
+        {
+          "id": "development-17",
+          "category": "different_subject",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different measures; common change and number are insufficient."
+        },
+        {
+          "id": "development-18",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "Separate objects share generic approval language."
+        },
+        {
+          "id": "development-19",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "Generic report language with unrelated subjects."
+        },
+        {
+          "id": "development-20",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different phenomena with generic measurement language."
+        },
+        {
+          "id": "development-21",
+          "category": "unrelated",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "No shared review subject."
+        },
+        {
+          "id": "development-22",
+          "category": "unrelated",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "No shared review subject."
+        },
+        {
+          "id": "development-23",
+          "category": "stopwords",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "Only connecting words overlap."
+        },
+        {
+          "id": "development-24",
+          "category": "unrelated",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "No shared review subject."
+        }
+      ],
+      "errors": [
+        {
+          "id": "development-06",
+          "category": "negation",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same metric with negated change."
+        },
+        {
+          "id": "development-12",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as equivalent financial change, but not matching wording."
+        },
+        {
+          "id": "development-13",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as related treatment outcome in different language."
+        },
+        {
+          "id": "development-14",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as the same production event."
+        },
+        {
+          "id": "development-15",
+          "category": "context",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same bridge, different events and context."
+        },
+        {
+          "id": "development-17",
+          "category": "different_subject",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different measures; common change and number are insufficient."
+        },
+        {
+          "id": "development-20",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different phenomena with generic measurement language."
+        }
+      ]
+    },
+    {
+      "threshold": 0.7,
+      "metrics": {
+        "count": 24,
+        "confusion_matrix_actual_then_predicted": {
+          "agreement": {
+            "agreement": 4,
+            "difference": 0,
+            "none": 0
+          },
+          "difference": {
+            "agreement": 0,
+            "difference": 6,
+            "none": 6
+          },
+          "none": {
+            "agreement": 0,
+            "difference": 1,
+            "none": 7
+          }
+        },
+        "accuracy": 0.7083333333333334,
+        "macro_f1": 0.7660818713450293,
+        "per_label": {
+          "agreement": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "support": 4
+          },
+          "difference": {
+            "precision": 0.8571428571428571,
+            "recall": 0.5,
+            "f1": 0.631578947368421,
+            "support": 12
+          },
+          "none": {
+            "precision": 0.5384615384615384,
+            "recall": 0.875,
+            "f1": 0.6666666666666667,
+            "support": 8
+          }
+        },
+        "by_category": {
+          "wording": {
+            "correct": 4,
+            "total": 4
+          },
+          "quantity": {
+            "correct": 1,
+            "total": 1
+          },
+          "negation": {
+            "correct": 0,
+            "total": 1
+          },
+          "units": {
+            "correct": 0,
+            "total": 1
+          },
+          "roles": {
+            "correct": 1,
+            "total": 1
+          },
+          "time": {
+            "correct": 1,
+            "total": 1
+          },
+          "scope": {
+            "correct": 1,
+            "total": 1
+          },
+          "sign": {
+            "correct": 1,
+            "total": 1
+          },
+          "paraphrase": {
+            "correct": 0,
+            "total": 3
+          },
+          "context": {
+            "correct": 0,
+            "total": 1
+          },
+          "format": {
+            "correct": 1,
+            "total": 1
+          },
+          "different_subject": {
+            "correct": 0,
+            "total": 1
+          },
+          "boilerplate": {
+            "correct": 3,
+            "total": 3
+          },
+          "unrelated": {
+            "correct": 3,
+            "total": 3
+          },
+          "stopwords": {
+            "correct": 1,
+            "total": 1
+          }
+        },
+        "review_pair_precision": 0.9090909090909091,
+        "review_pair_recall": 0.625
+      },
+      "predictions": [
+        {
+          "id": "development-01",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Case and final punctuation only."
+        },
+        {
+          "id": "development-02",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Whitespace only."
+        },
+        {
+          "id": "development-03",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Identical evidence wording."
+        },
+        {
+          "id": "development-04",
+          "category": "wording",
+          "expected": "agreement",
+          "predicted": "agreement",
+          "rationale": "Unicode case normalization."
+        },
+        {
+          "id": "development-05",
+          "category": "quantity",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric with differing quantities."
+        },
+        {
+          "id": "development-06",
+          "category": "negation",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same metric with negated change."
+        },
+        {
+          "id": "development-07",
+          "category": "units",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same dose with differing units."
+        },
+        {
+          "id": "development-08",
+          "category": "roles",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Reversed acquisition roles."
+        },
+        {
+          "id": "development-09",
+          "category": "time",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric with differing reporting periods; not necessarily inconsistent."
+        },
+        {
+          "id": "development-10",
+          "category": "scope",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same metric at different scope merits contextual review."
+        },
+        {
+          "id": "development-11",
+          "category": "sign",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Same balance with a differing sign."
+        },
+        {
+          "id": "development-12",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as equivalent financial change, but not matching wording."
+        },
+        {
+          "id": "development-13",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as related treatment outcome in different language."
+        },
+        {
+          "id": "development-14",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as the same production event."
+        },
+        {
+          "id": "development-15",
+          "category": "context",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same bridge, different events and context."
+        },
+        {
+          "id": "development-16",
+          "category": "format",
+          "expected": "difference",
+          "predicted": "difference",
+          "rationale": "Equivalent amount expressed differently; review, not contradiction."
+        },
+        {
+          "id": "development-17",
+          "category": "different_subject",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different measures; common change and number are insufficient."
+        },
+        {
+          "id": "development-18",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "Separate objects share generic approval language."
+        },
+        {
+          "id": "development-19",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "Generic report language with unrelated subjects."
+        },
+        {
+          "id": "development-20",
+          "category": "boilerplate",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "Different phenomena with generic measurement language."
+        },
+        {
+          "id": "development-21",
+          "category": "unrelated",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "No shared review subject."
+        },
+        {
+          "id": "development-22",
+          "category": "unrelated",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "No shared review subject."
+        },
+        {
+          "id": "development-23",
+          "category": "stopwords",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "Only connecting words overlap."
+        },
+        {
+          "id": "development-24",
+          "category": "unrelated",
+          "expected": "none",
+          "predicted": "none",
+          "rationale": "No shared review subject."
+        }
+      ],
+      "errors": [
+        {
+          "id": "development-06",
+          "category": "negation",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same metric with negated change."
+        },
+        {
+          "id": "development-07",
+          "category": "units",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same dose with differing units."
+        },
+        {
+          "id": "development-12",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as equivalent financial change, but not matching wording."
+        },
+        {
+          "id": "development-13",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as related treatment outcome in different language."
+        },
+        {
+          "id": "development-14",
+          "category": "paraphrase",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Authored as the same production event."
+        },
+        {
+          "id": "development-15",
+          "category": "context",
+          "expected": "difference",
+          "predicted": "none",
+          "rationale": "Same bridge, different events and context."
+        },
+        {
+          "id": "development-17",
+          "category": "different_subject",
+          "expected": "none",
+          "predicted": "difference",
+          "rationale": "Different measures; common change and number are insufficient."
+        }
+      ]
+    }
+  ],
+  "selected_threshold": 0.6,
+  "holdout_baseline": {
+    "threshold": 0.5,
+    "metrics": {
+      "count": 24,
+      "confusion_matrix_actual_then_predicted": {
+        "agreement": {
+          "agreement": 4,
+          "difference": 0,
+          "none": 0
+        },
+        "difference": {
+          "agreement": 0,
+          "difference": 7,
+          "none": 5
+        },
+        "none": {
+          "agreement": 0,
+          "difference": 4,
+          "none": 4
+        }
+      },
+      "accuracy": 0.625,
+      "macro_f1": 0.6930946291560103,
+      "per_label": {
+        "agreement": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 4
+        },
+        "difference": {
+          "precision": 0.6363636363636364,
+          "recall": 0.5833333333333334,
+          "f1": 0.6086956521739131,
+          "support": 12
+        },
+        "none": {
+          "precision": 0.4444444444444444,
+          "recall": 0.5,
+          "f1": 0.47058823529411764,
+          "support": 8
+        }
+      },
+      "by_category": {
+        "wording": {
+          "correct": 4,
+          "total": 4
+        },
+        "quantity": {
+          "correct": 1,
+          "total": 1
+        },
+        "negation": {
+          "correct": 0,
+          "total": 1
+        },
+        "units": {
+          "correct": 1,
+          "total": 1
+        },
+        "roles": {
+          "correct": 1,
+          "total": 1
+        },
+        "time": {
+          "correct": 1,
+          "total": 1
+        },
+        "scope": {
+          "correct": 1,
+          "total": 1
+        },
+        "sign": {
+          "correct": 1,
+          "total": 1
+        },
+        "paraphrase": {
+          "correct": 0,
+          "total": 3
+        },
+        "context": {
+          "correct": 0,
+          "total": 1
+        },
+        "format": {
+          "correct": 1,
+          "total": 1
+        },
+        "different_subject": {
+          "correct": 0,
+          "total": 1
+        },
+        "boilerplate": {
+          "correct": 0,
+          "total": 3
+        },
+        "unrelated": {
+          "correct": 3,
+          "total": 3
+        },
+        "stopwords": {
+          "correct": 1,
+          "total": 1
+        }
+      },
+      "review_pair_precision": 0.7333333333333333,
+      "review_pair_recall": 0.6875
+    },
+    "predictions": [
+      {
+        "id": "holdout-01",
+        "category": "wording",
+        "expected": "agreement",
+        "predicted": "agreement",
+        "rationale": "Contract ignores final sentence punctuation; not a semantic assertion."
+      },
+      {
+        "id": "holdout-02",
+        "category": "wording",
+        "expected": "agreement",
+        "predicted": "agreement",
+        "rationale": "Identical wording."
+      },
+      {
+        "id": "holdout-03",
+        "category": "wording",
+        "expected": "agreement",
+        "predicted": "agreement",
+        "rationale": "Whitespace and terminal punctuation only."
+      },
+      {
+        "id": "holdout-04",
+        "category": "wording",
+        "expected": "agreement",
+        "predicted": "agreement",
+        "rationale": "Case only."
+      },
+      {
+        "id": "holdout-05",
+        "category": "quantity",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same measure with differing amounts."
+      },
+      {
+        "id": "holdout-06",
+        "category": "negation",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Same shipment with negated arrival."
+      },
+      {
+        "id": "holdout-07",
+        "category": "units",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same cable with differing units."
+      },
+      {
+        "id": "holdout-08",
+        "category": "roles",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Reversed buyer and seller."
+      },
+      {
+        "id": "holdout-09",
+        "category": "time",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same metric across different periods."
+      },
+      {
+        "id": "holdout-10",
+        "category": "scope",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same measure with different geographic scope."
+      },
+      {
+        "id": "holdout-11",
+        "category": "sign",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same account with differing signs."
+      },
+      {
+        "id": "holdout-12",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as equivalent business change in different language."
+      },
+      {
+        "id": "holdout-13",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as the same weather damage event."
+      },
+      {
+        "id": "holdout-14",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as a related survival outcome."
+      },
+      {
+        "id": "holdout-15",
+        "category": "context",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Same airport across events; useful context."
+      },
+      {
+        "id": "holdout-16",
+        "category": "format",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Equivalent change with different notation."
+      },
+      {
+        "id": "holdout-17",
+        "category": "different_subject",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different generation sources; generic matching measure is insufficient."
+      },
+      {
+        "id": "holdout-18",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Separate decisions/objects share generic approval language."
+      },
+      {
+        "id": "holdout-19",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different outcomes with generic study language."
+      },
+      {
+        "id": "holdout-20",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different audit subjects; not competing claims."
+      },
+      {
+        "id": "holdout-21",
+        "category": "unrelated",
+        "expected": "none",
+        "predicted": "none",
+        "rationale": "No shared review subject."
+      },
+      {
+        "id": "holdout-22",
+        "category": "unrelated",
+        "expected": "none",
+        "predicted": "none",
+        "rationale": "No shared review subject."
+      },
+      {
+        "id": "holdout-23",
+        "category": "stopwords",
+        "expected": "none",
+        "predicted": "none",
+        "rationale": "Only connecting words overlap."
+      },
+      {
+        "id": "holdout-24",
+        "category": "unrelated",
+        "expected": "none",
+        "predicted": "none",
+        "rationale": "No shared review subject."
+      }
+    ],
+    "errors": [
+      {
+        "id": "holdout-06",
+        "category": "negation",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Same shipment with negated arrival."
+      },
+      {
+        "id": "holdout-12",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as equivalent business change in different language."
+      },
+      {
+        "id": "holdout-13",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as the same weather damage event."
+      },
+      {
+        "id": "holdout-14",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as a related survival outcome."
+      },
+      {
+        "id": "holdout-15",
+        "category": "context",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Same airport across events; useful context."
+      },
+      {
+        "id": "holdout-17",
+        "category": "different_subject",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different generation sources; generic matching measure is insufficient."
+      },
+      {
+        "id": "holdout-18",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Separate decisions/objects share generic approval language."
+      },
+      {
+        "id": "holdout-19",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different outcomes with generic study language."
+      },
+      {
+        "id": "holdout-20",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different audit subjects; not competing claims."
+      }
+    ]
+  },
+  "holdout_candidate": {
+    "threshold": 0.6,
+    "metrics": {
+      "count": 24,
+      "confusion_matrix_actual_then_predicted": {
+        "agreement": {
+          "agreement": 4,
+          "difference": 0,
+          "none": 0
+        },
+        "difference": {
+          "agreement": 0,
+          "difference": 7,
+          "none": 5
+        },
+        "none": {
+          "agreement": 0,
+          "difference": 3,
+          "none": 5
+        }
+      },
+      "accuracy": 0.6666666666666666,
+      "macro_f1": 0.7306397306397306,
+      "per_label": {
+        "agreement": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 4
+        },
+        "difference": {
+          "precision": 0.7,
+          "recall": 0.5833333333333334,
+          "f1": 0.6363636363636365,
+          "support": 12
+        },
+        "none": {
+          "precision": 0.5,
+          "recall": 0.625,
+          "f1": 0.5555555555555556,
+          "support": 8
+        }
+      },
+      "by_category": {
+        "wording": {
+          "correct": 4,
+          "total": 4
+        },
+        "quantity": {
+          "correct": 1,
+          "total": 1
+        },
+        "negation": {
+          "correct": 0,
+          "total": 1
+        },
+        "units": {
+          "correct": 1,
+          "total": 1
+        },
+        "roles": {
+          "correct": 1,
+          "total": 1
+        },
+        "time": {
+          "correct": 1,
+          "total": 1
+        },
+        "scope": {
+          "correct": 1,
+          "total": 1
+        },
+        "sign": {
+          "correct": 1,
+          "total": 1
+        },
+        "paraphrase": {
+          "correct": 0,
+          "total": 3
+        },
+        "context": {
+          "correct": 0,
+          "total": 1
+        },
+        "format": {
+          "correct": 1,
+          "total": 1
+        },
+        "different_subject": {
+          "correct": 0,
+          "total": 1
+        },
+        "boilerplate": {
+          "correct": 1,
+          "total": 3
+        },
+        "unrelated": {
+          "correct": 3,
+          "total": 3
+        },
+        "stopwords": {
+          "correct": 1,
+          "total": 1
+        }
+      },
+      "review_pair_precision": 0.7857142857142857,
+      "review_pair_recall": 0.6875
+    },
+    "predictions": [
+      {
+        "id": "holdout-01",
+        "category": "wording",
+        "expected": "agreement",
+        "predicted": "agreement",
+        "rationale": "Contract ignores final sentence punctuation; not a semantic assertion."
+      },
+      {
+        "id": "holdout-02",
+        "category": "wording",
+        "expected": "agreement",
+        "predicted": "agreement",
+        "rationale": "Identical wording."
+      },
+      {
+        "id": "holdout-03",
+        "category": "wording",
+        "expected": "agreement",
+        "predicted": "agreement",
+        "rationale": "Whitespace and terminal punctuation only."
+      },
+      {
+        "id": "holdout-04",
+        "category": "wording",
+        "expected": "agreement",
+        "predicted": "agreement",
+        "rationale": "Case only."
+      },
+      {
+        "id": "holdout-05",
+        "category": "quantity",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same measure with differing amounts."
+      },
+      {
+        "id": "holdout-06",
+        "category": "negation",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Same shipment with negated arrival."
+      },
+      {
+        "id": "holdout-07",
+        "category": "units",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same cable with differing units."
+      },
+      {
+        "id": "holdout-08",
+        "category": "roles",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Reversed buyer and seller."
+      },
+      {
+        "id": "holdout-09",
+        "category": "time",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same metric across different periods."
+      },
+      {
+        "id": "holdout-10",
+        "category": "scope",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same measure with different geographic scope."
+      },
+      {
+        "id": "holdout-11",
+        "category": "sign",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Same account with differing signs."
+      },
+      {
+        "id": "holdout-12",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as equivalent business change in different language."
+      },
+      {
+        "id": "holdout-13",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as the same weather damage event."
+      },
+      {
+        "id": "holdout-14",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as a related survival outcome."
+      },
+      {
+        "id": "holdout-15",
+        "category": "context",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Same airport across events; useful context."
+      },
+      {
+        "id": "holdout-16",
+        "category": "format",
+        "expected": "difference",
+        "predicted": "difference",
+        "rationale": "Equivalent change with different notation."
+      },
+      {
+        "id": "holdout-17",
+        "category": "different_subject",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different generation sources; generic matching measure is insufficient."
+      },
+      {
+        "id": "holdout-18",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "none",
+        "rationale": "Separate decisions/objects share generic approval language."
+      },
+      {
+        "id": "holdout-19",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different outcomes with generic study language."
+      },
+      {
+        "id": "holdout-20",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different audit subjects; not competing claims."
+      },
+      {
+        "id": "holdout-21",
+        "category": "unrelated",
+        "expected": "none",
+        "predicted": "none",
+        "rationale": "No shared review subject."
+      },
+      {
+        "id": "holdout-22",
+        "category": "unrelated",
+        "expected": "none",
+        "predicted": "none",
+        "rationale": "No shared review subject."
+      },
+      {
+        "id": "holdout-23",
+        "category": "stopwords",
+        "expected": "none",
+        "predicted": "none",
+        "rationale": "Only connecting words overlap."
+      },
+      {
+        "id": "holdout-24",
+        "category": "unrelated",
+        "expected": "none",
+        "predicted": "none",
+        "rationale": "No shared review subject."
+      }
+    ],
+    "errors": [
+      {
+        "id": "holdout-06",
+        "category": "negation",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Same shipment with negated arrival."
+      },
+      {
+        "id": "holdout-12",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as equivalent business change in different language."
+      },
+      {
+        "id": "holdout-13",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as the same weather damage event."
+      },
+      {
+        "id": "holdout-14",
+        "category": "paraphrase",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Authored as a related survival outcome."
+      },
+      {
+        "id": "holdout-15",
+        "category": "context",
+        "expected": "difference",
+        "predicted": "none",
+        "rationale": "Same airport across events; useful context."
+      },
+      {
+        "id": "holdout-17",
+        "category": "different_subject",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different generation sources; generic matching measure is insufficient."
+      },
+      {
+        "id": "holdout-19",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different outcomes with generic study language."
+      },
+      {
+        "id": "holdout-20",
+        "category": "boilerplate",
+        "expected": "none",
+        "predicted": "difference",
+        "rationale": "Different audit subjects; not competing claims."
+      }
+    ]
+  },
+  "screening_gate": "Higher holdout macro-F1 and review-pair precision, with at most 0.05 recall loss.",
+  "passes_screening_gate": true,
+  "production_threshold": 0.5
+}

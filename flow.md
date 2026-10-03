@@ -1,6 +1,18 @@
 # User and data flow log
 
-Updated after every completed phase. Current milestone: Part 7 Phase 1 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 7 Phase 2 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+
+
+## Part 7 Phase 2 — Measured comparison usefulness
+
+**Current user journey:** upload native/scanned PDFs → inspect extracted facts and source PDFs → browse paginated cross-document comparisons → manually review both evidence panels. Production agreement normalization and the 0.5 overlap threshold remain unchanged. Agreement means normalized matching wording; difference means a potential review pair, not a verified contradiction.
+
+**New offline flow:** synthetic labeled source pairs → shared pure candidate generator → development threshold trials → selected candidate → held-out predictions/confusion matrices/error records. IDs, full text, page references, and label rationales are retained in backend/evaluation/comparison_cases.json; docs/comparison-evaluation.json records results. This path does not upload PDFs, measure OCR, import the API, or touch runtime storage.
+
+**Measured boundaries:** baseline surfaced four unrelated holdout pairs and missed five related pairs. Candidate 0.6 removed one false positive but missed the same five. Production stays at 0.5 pending representative, independently annotated evidence. Semantic matching, automatic truth/contradiction verification, and model calls remain unimplemented. The synthetic holdout is now consumed and cannot support repeated tuning claims.
+
+**Verification:** 61 backend tests pass, including exact report reproduction and API classification/source-page parity for every corpus pair. Full methodology is in docs/comparison-quality.md. Part 7 Phase 3 operational reconciliation remains planned; browser behavior is unchanged.
+
 
 ## Part 7 Phase 1 — Bounded collection browsing
 

@@ -1,6 +1,18 @@
 # Technology decision log
 
-Updated after every completed phase. Current milestone: Part 7 Phase 1 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 7 Phase 2 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+
+
+## Part 7 Phase 2 — Dependency-free comparison evaluation
+
+**No new tool or dependency was needed.** Retained Python JSON/argparse, pytest, FastAPI TestClient, and the existing token-postings matcher. Moved normalization/token functions into the pure comparison module and exposed an optional evaluation threshold; production still uses 0.5. The offline runner avoids importing the API and therefore avoids startup storage writes. No schema change.
+
+**Evaluation design:** 48 authored pairs, equally sized development/holdout splits, explicit three-class rubric, source/page metadata and rationales. Threshold selection uses development macro-F1 with baseline proximity as tie-breaker. Raw output preserves per-label precision/recall/F1, confusion matrices, category counts, and individual errors. Tests check hand-calculated metrics, holdout-label independence, deterministic report reproduction, and API parity/provenance.
+
+**Decision/trade-offs:** selected 0.6 improves holdout macro-F1 0.6931→0.7306 and review precision 73.33%→78.57%, with recall 68.75% unchanged. It passes the screening gate but only removes one false positive; retain production 0.5. These correlated synthetic examples have no independent adjudication or production prevalence, so they do not justify deployment or general accuracy claims. Embeddings/models might help paraphrases but add cost, privacy choices, dependencies, and evaluation requirements; defer until representative fresh evidence exists. See docs/comparison-quality.md.
+
+**Verification:** 61 backend tests pass, including unchanged exhaustive-reference classification tests and all 48 corpus cases through the API. No frontend/build rerun was needed for pure backend refactoring and offline evaluation. Existing dependency deprecation warnings remain. One Part 7 phase remains: operational reconciliation and deployment scope.
+
 
 ## Part 7 Phase 1 — Token postings and shared pagination contracts
 

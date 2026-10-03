@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from app.extraction import extract_pages
-from app.comparison_candidates import candidate_pairs
+from app.comparison_candidates import candidate_pairs, claim_tokens, normalized_claim
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("FACTFLOW_DATA_DIR", str(BASE_DIR / "data"))).resolve()
@@ -428,17 +428,6 @@ def list_facts(
         limit=limit,
         offset=offset,
     )
-
-
-def claim_tokens(claim: str) -> set[str]:
-    # Connecting words alone are not evidence that two claims share a subject.
-    stop_words = {"a", "an", "the", "and", "or", "of", "to", "in", "on", "at", "by", "for", "from", "with", "is", "are", "was", "were", "be", "been", "it", "this", "that"}
-    return set(re.findall(r"\w+", claim.casefold())) - stop_words
-
-
-def normalized_claim(claim: str) -> str:
-    # Preserve word order, repeated words, numbers, units, and internal symbols.
-    return " ".join(claim.casefold().split()).rstrip(".!?")
 
 
 @app.get("/comparisons", response_model=ComparisonPageResponse)

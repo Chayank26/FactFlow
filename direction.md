@@ -1,6 +1,20 @@
 # Direction log
 
-Updated after every completed phase. Current milestone: Part 7 Phase 1 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+Updated after every completed phase. Current milestone: Part 7 Phase 2 complete (Parts 4–6 complete). Current local ports: frontend 5179, API 8019.
+
+
+## Part 7 Phase 2 — Labeled comparison evaluation
+
+Added 48 synthetic English evidence pairs with source/page references, labels, categories, and rationales, divided into development and holdout sets. This follows collection performance so comparison usefulness can be measured separately from speed. Added a deterministic offline runner with per-label metrics, confusion matrices, category results, and traceable errors. Pure normalization/token helpers now live beside the candidate generator so evaluation never initializes application storage.
+
+Development selected threshold 0.6 from 0.5/0.6/0.7. Holdout macro-F1 improved from 0.6931 to 0.7306 and review precision from 73.33% to 78.57%, with recall unchanged at 68.75%. This is one fewer false positive across 24 authored cases; five related pairs remain missed. Retained production 0.5 because the small, non-blind synthetic set lacks independent annotation and representative evidence. No model, dependency, schema, or browser behavior change. Full rubric, limits, reproduction, and decision are in docs/comparison-quality.md.
+
+Verification: all 61 backend tests pass, including corpus checks, hand-calculated metrics, holdout-independent selection, exact checked-in report reproduction, and baseline API/provenance parity on all 48 pairs. Existing exhaustive-reference tests preserve production behavior. Whitespace checks pass. Browser/build checks were not rerun because frontend code and API contracts are unchanged. Two existing dependency deprecation warnings remain.
+
+Part 7 Phase 2 is complete; Phase 3 remains operational reconciliation and deployment-scope decisions. No git commit was created.
+
+Suggested commit message: `test: add labeled comparison evaluation and quality report`
+
 
 ## Part 7 Phase 1 — Collection performance and pagination
 

@@ -1,8 +1,9 @@
 """Exact candidate pruning for the existing textual comparison heuristic."""
 from collections import defaultdict
+import re
 
 
-def candidate_pairs(rows, tokenize, normalize, document_id=None):
+def candidate_pairs(rows, tokenize, normalize, document_id=None, *, min_similarity=0.5):
     tokens = [tokenize(row['claim']) for row in rows]
     normalized = [normalize(row['claim']) for row in rows]
     postings = defaultdict(list)
@@ -31,5 +32,16 @@ def candidate_pairs(rows, tokenize, normalize, document_id=None):
                 continue
             if normalized[left] == normalized[right]:
                 yield left, right, 'agreement'
-            elif shared[right] / max(len(values), len(tokens[right])) >= 0.5:
+            elif shared[right] / max(len(values), len(tokens[right])) >= min_similarity:
                 yield left, right, 'difference'
+
+
+def claim_tokens(claim: str) -> set[str]:
+    # Connecting words alone are not evidence that two claims share a subject.
+    stop_words = {"a", "an", "the", "and", "or", "of", "to", "in", "on", "at", "by", "for", "from", "with", "is", "are", "was", "were", "be", "been", "it", "this", "that"}
+    return set(re.findall(r"\w+", claim.casefold())) - stop_words
+
+
+def normalized_claim(claim: str) -> str:
+    # Preserve word order, repeated words, numbers, units, and internal symbols.
+    return " ".join(claim.casefold().split()).rstrip(".!?")
